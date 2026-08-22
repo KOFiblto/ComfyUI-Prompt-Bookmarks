@@ -1,0 +1,18 @@
+[project]
+name = "comfyui-prompt-bookmarks"
+version = "0.1.0"
+description = "A lightweight workflow-aware prompt library sidebar for ComfyUI"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "VDeng" }]
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/vdeng-ai/ComfyUI-Prompt-Bookmarks"
+Issues = "https://github.com/vdeng-ai/ComfyUI-Prompt-Bookmarks/issues"
+
+[tool.comfy]
+PublisherId = "vdeng-ai"
+DisplayName = "ComfyUI Prompt Bookmarks"
+Icon = ""
