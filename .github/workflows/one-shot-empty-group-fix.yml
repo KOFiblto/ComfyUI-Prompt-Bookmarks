@@ -1,0 +1,66 @@
+name: one-shot empty group fix
+
+on:
+  push:
+    branches:
+      - fix/empty-group-delete
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/empty-group-delete
+      - name: Apply focused fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          js_path = Path('web/prompt_bookmarks.js')
+          js = js_path.read_text(encoding='utf-8')
+          js = js.replace('    deleteConfirm: "删除“{name}”？生成文件不会被删除。",\n', '    deleteConfirm: "删除“{name}”？生成文件不会被删除。",\n    deleteGroupConfirm: "删除空分组“{name}”？",\n    groupDeleted: "分组已删除",\n', 1)
+          js = js.replace('    deleteConfirm: "Delete “{name}”? Generated files will not be deleted.",\n', '    deleteConfirm: "Delete “{name}”? Generated files will not be deleted.",\n    deleteGroupConfirm: "Delete empty group “{name}”?",\n    groupDeleted: "Group deleted",\n', 1)
+          js = js.replace('  const category = t("title");\n', '')
+          js = js.replace('    langSetting.category = [category];\n', '')
+          js = js.replace('    autoLinkSetting.category = [category];\n', '')
+          js = js.replace('      category: ["Prompt Bookmarks"],\n', '')
+          js = js.replace('.pb-search,.pb-input,.pb-select{width:100%;box-sizing:border-box;border:1px solid var(--border-color);background:var(--comfy-input-bg);color:var(--input-text);border-radius:6px;padding:8px;outline:none}.pb-groups{display:flex;gap:5px;overflow-x:auto}.pb-chip{white-space:nowrap;border-radius:999px;padding:4px 8px;font-size:12px}', '.pb-search,.pb-input,.pb-select{width:100%;box-sizing:border-box;border:1px solid var(--border-color);background:var(--comfy-input-bg);color:var(--input-text);border-radius:6px;padding:8px;outline:none}.pb-groups{display:flex;gap:5px;overflow-x:auto}.pb-chip{white-space:nowrap;border-radius:999px;padding:4px 8px;font-size:12px}.pb-group-wrap{display:inline-flex;align-items:center;flex:0 0 auto}.pb-group-wrap .pb-chip{border-radius:999px 0 0 999px}.pb-group-delete{border-left:0!important;border-radius:0 999px 999px 0!important;padding:4px 7px!important;font-size:12px!important;color:#ff7777}', 1)
+          marker = 'function renderGroupFilters(head) {\n'
+          helper = 'async function deleteGroup(group) {\n  if (Number(group?.prompt_count || 0) !== 0) return;\n  if (!window.confirm(t("deleteGroupConfirm", { name: group.name }))) return;\n  await request(`/groups/${encodeURIComponent(group.id)}`, { method: "DELETE" });\n  if (state.groupId === group.id) state.groupId = null;\n  await loadData();\n  notify("success", t("groupDeleted"), group.name);\n}\n'
+          if helper not in js:
+              js = js.replace(marker, helper + marker, 1)
+          old_groups = '    for (const g of state.groups || []) groups.appendChild(button(g.name, async () => { state.groupId = g.id; await loadPrompts(); }, `pb-chip ${state.groupId === g.id ? "active" : ""}`));\n'
+          new_groups = '    for (const g of state.groups || []) {\n      if (Number(g.prompt_count || 0) === 0) {\n        const wrap = document.createElement("div"); wrap.className = "pb-group-wrap";\n        wrap.append(\n          button(g.name, async () => { state.groupId = g.id; await loadPrompts(); }, `pb-chip ${state.groupId === g.id ? "active" : ""}`),\n          button("×", () => deleteGroup(g), "pb-group-delete"),\n        );\n        groups.appendChild(wrap);\n      } else {\n        groups.appendChild(button(g.name, async () => { state.groupId = g.id; await loadPrompts(); }, `pb-chip ${state.groupId === g.id ? "active" : ""}`));\n      }\n    }\n'
+          if old_groups not in js:
+              raise SystemExit('current-workflow group renderer not found')
+          js = js.replace(old_groups, new_groups, 1)
+          js_path.write_text(js, encoding='utf-8')
+
+          db_path = Path('prompt_bookmarks/database.py')
+          db = db_path.read_text(encoding='utf-8')
+          old_db = '    def delete_group(self, group_id: int) -> bool:\n        with self._lock, self._conn() as conn:\n            cur = conn.execute("DELETE FROM groups WHERE id=?", (group_id,))\n            return cur.rowcount > 0\n'
+          new_db = '    def delete_group(self, group_id: int) -> bool:\n        with self._lock, self._conn() as conn:\n            row = conn.execute("SELECT id FROM groups WHERE id=?", (group_id,)).fetchone()\n            if row is None:\n                return False\n            prompt_count = conn.execute(\n                "SELECT COUNT(*) AS n FROM prompts WHERE group_id=?",\n                (group_id,),\n            ).fetchone()["n"]\n            if prompt_count:\n                raise ValueError("Group is not empty")\n            cur = conn.execute("DELETE FROM groups WHERE id=?", (group_id,))\n            return cur.rowcount > 0\n'
+          if old_db not in db:
+              raise SystemExit('delete_group implementation not found')
+          db_path.write_text(db.replace(old_db, new_db, 1), encoding='utf-8')
+
+          test_path = Path('tests/test_database.py')
+          tests = test_path.read_text(encoding='utf-8')
+          old_test = '    def test_group_delete_keeps_prompt(self):\n        group = self.db.create_group(self.workflow_id, "Character")\n        prompt = self.db.create_prompt(self.workflow_id, "Turn around", self.fields(), group["id"])\n        self.assertTrue(self.db.delete_group(group["id"]))\n        stored = self.db.get_prompt(prompt["id"])\n        self.assertIsNone(stored["group_id"])\n'
+          new_test = '    def test_group_delete_rejects_non_empty_group(self):\n        group = self.db.create_group(self.workflow_id, "Character")\n        prompt = self.db.create_prompt(self.workflow_id, "Turn around", self.fields(), group["id"])\n        with self.assertRaisesRegex(ValueError, "Group is not empty"):\n            self.db.delete_group(group["id"])\n        stored = self.db.get_prompt(prompt["id"])\n        self.assertEqual(stored["group_id"], group["id"])\n\n    def test_empty_group_can_be_deleted(self):\n        group = self.db.create_group(self.workflow_id, "Character")\n        self.assertTrue(self.db.delete_group(group["id"]))\n        self.assertEqual(self.db.list_groups(self.workflow_id), [])\n'
+          if old_test not in tests:
+              raise SystemExit('old group delete test not found')
+          test_path.write_text(tests.replace(old_test, new_test, 1), encoding='utf-8')
+          PY
+
+          git rm .github/workflows/one-shot-empty-group-fix.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add web/prompt_bookmarks.js prompt_bookmarks/database.py tests/test_database.py
+          git commit -m "fix: allow deleting empty prompt groups"
+          git push origin HEAD:fix/empty-group-delete
