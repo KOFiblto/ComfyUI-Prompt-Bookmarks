@@ -92,14 +92,23 @@ Acceptance:
 
 Target: **0.1.x after real-world feedback**
 
-- Validate MiniMax H3 workflows and popular video save nodes
+Lightweight hardening completed:
+
+- MiniMax H3 plus common Preview Image / Save Video paths validated in real use
+- Missing media now falls back to an explicit stale-preview state instead of a broken image/video element
+- Bindings can safely recover at runtime when a node ID changes and exactly one `node_type + widget_name` match exists
+- Group rename UI added; empty-group deletion remains guarded
+- Group counts refresh immediately after deleting the last prompt
+
+Still planned, only when real workflows require it:
+
 - Validate Qwen Image / Flux workflows
 - Improve media metadata extraction for custom video node output shapes
-- Add explicit stale-preview state when source files are gone
-- Better binding repair when node IDs change
-- Add group rename/delete UI
-- Add prompt field-content editing in the vault
-- Add media history drawer and cover selection
+
+Deferred to avoid feature bloat:
+
+- Prompt field-content editing inside the vault
+- Media history drawer and manual cover selection
 
 ## Phase 6 — Stable 0.2.0
 
