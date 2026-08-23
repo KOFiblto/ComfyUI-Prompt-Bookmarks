@@ -1,0 +1,78 @@
+name: one-shot i18n fix
+
+on:
+  push:
+    branches:
+      - fix/i18n-note-default
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/i18n-note-default
+      - name: Apply focused frontend fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('web/prompt_bookmarks.js')
+          text = path.read_text(encoding='utf-8')
+
+          replacements = [
+              (
+                  '  const noteLike = /(^|[\\s_\\-/])(note|notes|markdown|sticky)([\\s_\\-/]|$)/i;',
+                  '  const noteLike = /(note|notes|markdown|sticky)/i;',
+              ),
+              (
+                  '''function t(key, vars = {}) {\n  let value = I18N[language()]?.[key] ?? I18N["en-US"]?.[key] ?? key;\n  for (const [name, replacement] of Object.entries(vars)) value = value.replaceAll(`{${name}}`, String(replacement));\n  return value;\n}\n''',
+                  '''function t(key, vars = {}) {\n  let value = I18N[language()]?.[key] ?? I18N["en-US"]?.[key] ?? key;\n  for (const [name, replacement] of Object.entries(vars)) value = value.replaceAll(`{${name}}`, String(replacement));\n  return value;\n}\nfunction refreshExtensionLabels() {\n  const settings = app.extensionManager?.setting?.settings;\n  const category = t("title");\n  const langSetting = settings?.[LANG_SETTING];\n  if (langSetting) {\n    langSetting.name = t("language");\n    langSetting.category = [category];\n    langSetting.options = [\n      { value: "auto", text: t("languageAuto") },\n      { value: "zh-CN", text: t("languageZh") },\n      { value: "en-US", text: t("languageEn") },\n    ];\n  }\n  const autoLinkSetting = settings?.[AUTOLINK_SETTING];\n  if (autoLinkSetting) {\n    autoLinkSetting.name = t("autoLink");\n    autoLinkSetting.category = [category];\n  }\n  const tab = app.extensionManager?.getSidebarTabs?.().find((item) => item.id === "prompt-bookmarks");\n  if (tab) {\n    tab.title = t("title");\n    tab.tooltip = t("tooltip");\n  }\n}\n''',
+              ),
+              (
+                  '  languageSelect.onchange = async () => { await app.extensionManager?.setting?.set?.(LANG_SETTING, languageSelect.value); dlg.overlay.remove(); render(); showSettings(); };',
+                  '  languageSelect.onchange = async () => { await app.extensionManager?.setting?.set?.(LANG_SETTING, languageSelect.value); refreshExtensionLabels(); dlg.overlay.remove(); render(); showSettings(); };',
+              ),
+              (
+                  '  if (!force && key === state.lastWorkflowKey && lang !== state.lastLanguage) { state.lastLanguage = lang; render(); return; }',
+                  '  if (!force && key === state.lastWorkflowKey && lang !== state.lastLanguage) { state.lastLanguage = lang; refreshExtensionLabels(); render(); return; }',
+              ),
+              (
+                  '''  settings: [\n    { id: LANG_SETTING, name: "Prompt Bookmarks: Language / 提示词收藏：语言", type: "combo", options: [{ value: "auto", text: "Auto / 自动" }, { value: "zh-CN", text: "简体中文" }, { value: "en-US", text: "English" }], defaultValue: "auto" },\n    { id: AUTOLINK_SETTING, name: "Prompt Bookmarks: Auto-link generated media / 提示词收藏：自动关联生成结果", type: "boolean", defaultValue: true },\n  ],''',
+                  '''  settings: [\n    {\n      id: LANG_SETTING,\n      name: "Language",\n      category: ["Prompt Bookmarks"],\n      type: "combo",\n      options: [{ value: "auto", text: "Auto" }, { value: "zh-CN", text: "简体中文" }, { value: "en-US", text: "English" }],\n      defaultValue: "auto",\n      onChange: () => setTimeout(() => { refreshExtensionLabels(); render(); }, 0),\n    },\n    {\n      id: AUTOLINK_SETTING,\n      name: "Automatically link generated media",\n      category: ["Prompt Bookmarks"],\n      type: "boolean",\n      defaultValue: true,\n    },\n  ],''',
+              ),
+              (
+                  '      id: "prompt-bookmarks", icon: "pi pi-bookmark", title: "Prompt Bookmarks / 提示词收藏", tooltip: "Prompt bookmarks / 提示词收藏", type: "custom",',
+                  '      id: "prompt-bookmarks", icon: "pi pi-bookmark", title: t("title"), tooltip: t("tooltip"), type: "custom",',
+              ),
+              (
+                  '    injectStyles();\n    app.extensionManager.registerSidebarTab({',
+                  '    injectStyles();\n    refreshExtensionLabels();\n    app.extensionManager.registerSidebarTab({',
+              ),
+              (
+                  '    });\n    syncActiveWorkflow(true).catch(console.error); state.syncTimer ||= setInterval(() => syncActiveWorkflow(false).catch(console.error), 750);',
+                  '    });\n    refreshExtensionLabels();\n    syncActiveWorkflow(true).catch(console.error); state.syncTimer ||= setInterval(() => syncActiveWorkflow(false).catch(console.error), 750);',
+              ),
+          ]
+
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f'Expected text not found:\n{old}')
+              text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+      - name: Syntax check
+        run: node --check web/prompt_bookmarks.js
+      - name: Remove one-shot workflow and commit
+        run: |
+          rm .github/workflows/one-shot-i18n-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/prompt_bookmarks.js .github/workflows/one-shot-i18n-fix.yml
+          git commit -m "fix: restore single-language labels and note defaults"
+          git push origin HEAD:fix/i18n-note-default
