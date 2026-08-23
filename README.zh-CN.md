@@ -16,16 +16,6 @@
   <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
 </p>
 
-## 界面预览
-
-### 不修改工作流画布，直接收藏当前提示词
-
-![收藏当前提示词](docs/prompt-bookmarks-save-dialog.png)
-
-### 在侧边栏浏览提示词，并自动关联生成的图片 / 视频预览
-
-![带视频预览的 Prompt Bookmarks 侧边栏](docs/prompt-bookmarks-video-preview.png)
-
 ## 为什么做 Prompt Bookmarks？
 
 在 ComfyUI 里不断试提示词很方便，但真正好用的提示词经常散落在不同工作流、文本文件、聊天记录或复制粘贴片段里。
@@ -40,6 +30,16 @@
 - **感知工作流**：记住每个工作流真正使用的提示词字段，并可一键恢复。
 
 如果你在找 **ComfyUI 提示词管理器、Prompt Manager、Prompt Library、Prompt Organizer、Prompt Bookmarks**，这个项目的目标就是保持简单、够用、不打扰生成流程。
+
+## 界面预览
+
+### 不修改工作流画布，直接收藏当前提示词
+
+![收藏当前提示词](docs/prompt-bookmarks-save-dialog.png)
+
+### 在侧边栏浏览提示词，并自动关联生成的图片 / 视频预览
+
+![带视频预览的 Prompt Bookmarks 侧边栏](docs/prompt-bookmarks-video-preview.png)
 
 ## 功能
 
@@ -74,7 +74,9 @@
 
 ### ComfyUI Manager
 
-项目已经包含 Comfy Registry 所需元数据，并正在准备加入 ComfyUI Manager 搜索。收录后可以搜索：
+项目已经包含 Comfy Registry 所需元数据，并已提交官方 ComfyUI Manager 收录。在正式出现在 Manager 搜索结果之前，可以先使用下方的手动安装方式。
+
+收录后可以搜索：
 
 ```text
 ComfyUI Prompt Bookmarks

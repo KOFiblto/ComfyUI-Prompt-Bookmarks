@@ -16,16 +16,6 @@
   <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
 </p>
 
-## Screenshots
-
-### Save the current prompt without touching the workflow graph
-
-![Save Current Prompt dialog](docs/prompt-bookmarks-save-dialog.png)
-
-### Browse saved prompts with generated image/video previews in the sidebar
-
-![Prompt Bookmarks sidebar with video preview](docs/prompt-bookmarks-video-preview.png)
-
 ## Why Prompt Bookmarks?
 
 ComfyUI makes it easy to experiment with prompts, but good prompts often end up scattered across workflow files, text notes, chat history, or copy-paste snippets.
@@ -40,6 +30,16 @@ ComfyUI makes it easy to experiment with prompts, but good prompts often end up 
 - **Workflow-aware** — remember which prompt fields belong to each workflow and restore them with one click.
 
 If you are searching for a **ComfyUI prompt manager**, **prompt library**, **prompt organizer**, or **prompt bookmark sidebar**, this project is intentionally built to stay simple and out of the way.
+
+## Screenshots
+
+### Save the current prompt without touching the workflow graph
+
+![Save Current Prompt dialog](docs/prompt-bookmarks-save-dialog.png)
+
+### Browse saved prompts with generated image/video previews in the sidebar
+
+![Prompt Bookmarks sidebar with video preview](docs/prompt-bookmarks-video-preview.png)
 
 ## Features
 
@@ -72,7 +72,9 @@ If you are searching for a **ComfyUI prompt manager**, **prompt library**, **pro
 
 ### ComfyUI Manager
 
-The project includes Comfy Registry metadata and is being prepared for ComfyUI Manager discovery. Once listed, search for:
+The project includes Comfy Registry metadata and has been submitted for official ComfyUI Manager listing. Until it appears in Manager search, use the manual installation below.
+
+Once listed, search for:
 
 ```text
 ComfyUI Prompt Bookmarks
