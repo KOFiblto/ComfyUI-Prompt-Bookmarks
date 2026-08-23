@@ -161,6 +161,30 @@ function t(key, vars = {}) {
   for (const [name, replacement] of Object.entries(vars)) value = value.replaceAll(`{${name}}`, String(replacement));
   return value;
 }
+function refreshExtensionLabels() {
+  const settings = app.extensionManager?.setting?.settings;
+  const category = t("title");
+  const langSetting = settings?.[LANG_SETTING];
+  if (langSetting) {
+    langSetting.name = t("language");
+    langSetting.category = [category];
+    langSetting.options = [
+      { value: "auto", text: t("languageAuto") },
+      { value: "zh-CN", text: t("languageZh") },
+      { value: "en-US", text: t("languageEn") },
+    ];
+  }
+  const autoLinkSetting = settings?.[AUTOLINK_SETTING];
+  if (autoLinkSetting) {
+    autoLinkSetting.name = t("autoLink");
+    autoLinkSetting.category = [category];
+  }
+  const tab = app.extensionManager?.getSidebarTabs?.().find((item) => item.id === "prompt-bookmarks");
+  if (tab) {
+    tab.title = t("title");
+    tab.tooltip = t("tooltip");
+  }
+}
 
 function injectStyles() {
   if (document.getElementById("prompt-bookmarks-styles")) return;
@@ -254,7 +278,7 @@ function promptCandidates() {
   const out = [];
   const likely = /(prompt|text|positive|negative|caption|instruction|description|motion|camera|scene|character)/i;
   const reject = /^(filename|filename_prefix|path|directory|folder|seed|url|model|ckpt|checkpoint)$/i;
-  const noteLike = /(^|[\s_\-/])(note|notes|markdown|sticky)([\s_\-/]|$)/i;
+  const noteLike = /(note|notes|markdown|sticky)/i;
   for (const node of app.graph?._nodes || []) {
     for (const widget of node.widgets || []) {
       if (!widget?.name || typeof widget.value !== "string") continue;
@@ -434,7 +458,7 @@ function showSettings() {
     const option = document.createElement("option"); option.value = value; option.textContent = label; languageSelect.appendChild(option);
   }
   languageSelect.value = settingGet(LANG_SETTING, "auto");
-  languageSelect.onchange = async () => { await app.extensionManager?.setting?.set?.(LANG_SETTING, languageSelect.value); dlg.overlay.remove(); render(); showSettings(); };
+  languageSelect.onchange = async () => { await app.extensionManager?.setting?.set?.(LANG_SETTING, languageSelect.value); refreshExtensionLabels(); dlg.overlay.remove(); render(); showSettings(); };
   languageRow.append(languageText, languageSelect); dlg.body.appendChild(languageRow);
   const autoRow = document.createElement("div"); autoRow.className = "pb-settings-row";
   const autoText = document.createElement("div"); autoText.textContent = t("autoLink");
@@ -506,7 +530,7 @@ function render() {
 async function syncActiveWorkflow(force = false) {
   const current = activeWorkflowInfo(); const key = current ? `${current.sourceId}|${current.path}|${current.name}` : ""; const lang = language();
   if (!force && key === state.lastWorkflowKey && lang === state.lastLanguage) return;
-  if (!force && key === state.lastWorkflowKey && lang !== state.lastLanguage) { state.lastLanguage = lang; render(); return; }
+  if (!force && key === state.lastWorkflowKey && lang !== state.lastLanguage) { state.lastLanguage = lang; refreshExtensionLabels(); render(); return; }
   state.lastWorkflowKey = key; state.lastLanguage = lang; state.workflow = current; state.groupId = null; state.allGroupName = null; await loadData();
 }
 function extractPromptGraph(history) {
@@ -567,16 +591,32 @@ async function onExecutionSuccess(event) {
 app.registerExtension({
   name: EXTENSION_NAME,
   settings: [
-    { id: LANG_SETTING, name: "Prompt Bookmarks: Language / 提示词收藏：语言", type: "combo", options: [{ value: "auto", text: "Auto / 自动" }, { value: "zh-CN", text: "简体中文" }, { value: "en-US", text: "English" }], defaultValue: "auto" },
-    { id: AUTOLINK_SETTING, name: "Prompt Bookmarks: Auto-link generated media / 提示词收藏：自动关联生成结果", type: "boolean", defaultValue: true },
+    {
+      id: LANG_SETTING,
+      name: "Language",
+      category: ["Prompt Bookmarks"],
+      type: "combo",
+      options: [{ value: "auto", text: "Auto" }, { value: "zh-CN", text: "简体中文" }, { value: "en-US", text: "English" }],
+      defaultValue: "auto",
+      onChange: () => setTimeout(() => { refreshExtensionLabels(); render(); }, 0),
+    },
+    {
+      id: AUTOLINK_SETTING,
+      name: "Automatically link generated media",
+      category: ["Prompt Bookmarks"],
+      type: "boolean",
+      defaultValue: true,
+    },
   ],
   async setup() {
     injectStyles();
+    refreshExtensionLabels();
     app.extensionManager.registerSidebarTab({
-      id: "prompt-bookmarks", icon: "pi pi-bookmark", title: "Prompt Bookmarks / 提示词收藏", tooltip: "Prompt bookmarks / 提示词收藏", type: "custom",
+      id: "prompt-bookmarks", icon: "pi pi-bookmark", title: t("title"), tooltip: t("tooltip"), type: "custom",
       render: (element) => { state.root = element; element.classList.add("pb-root"); render(); syncActiveWorkflow(true).catch(console.error); },
       destroy: () => { state.root = null; },
     });
+    refreshExtensionLabels();
     syncActiveWorkflow(true).catch(console.error); state.syncTimer ||= setInterval(() => syncActiveWorkflow(false).catch(console.error), 750);
     api.addEventListener("execution_success", (event) => { if (settingGet(AUTOLINK_SETTING, true) !== false) onExecutionSuccess(event); });
   },
