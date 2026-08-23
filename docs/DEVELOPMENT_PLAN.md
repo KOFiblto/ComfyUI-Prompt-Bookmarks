@@ -43,7 +43,7 @@ Status: **implemented in 0.1.0**
 - Scan editable string widgets in the current graph
 - Heuristically mark likely prompt fields
 - Let the user confirm fields and edit labels
-- Store `node_id + node_type + widget_name + label`
+- Store node/widget binding metadata
 - Detect missing bindings when the graph changes
 
 Acceptance:
@@ -90,20 +90,20 @@ Acceptance:
 
 ## Phase 5 — Trial hardening
 
-Target: **0.1.x after real-world feedback**
+Status: **implemented in 0.1.x**
 
 Lightweight hardening completed:
 
 - MiniMax H3 plus common Preview Image / Save Video paths validated in real use
-- Missing media now falls back to an explicit stale-preview state instead of a broken image/video element
-- Bindings can safely recover at runtime when a node ID changes and exactly one `node_type + widget_name` match exists
+- Missing media falls back to an explicit stale-preview state instead of a broken element
+- Bindings safely recover at runtime when a node ID changes and exactly one matching field exists
 - Group rename UI added; empty-group deletion remains guarded
 - Group counts refresh immediately after deleting the last prompt
 
-Still planned, only when real workflows require it:
+Still compatibility-driven only:
 
-- Validate Qwen Image / Flux workflows
-- Improve media metadata extraction for custom video node output shapes
+- Validate Qwen Image / Flux workflows when real workflows require it
+- Improve media metadata extraction only for concrete custom video node output shapes
 
 Deferred to avoid feature bloat:
 
@@ -112,17 +112,26 @@ Deferred to avoid feature bloat:
 
 ## Phase 6 — Stable 0.2.0
 
-Target after trial feedback:
+Status: **implemented in 0.2.0**
 
-- Export/import Prompt Bookmarks data
-- Optional JSON backup
-- Subgraph-aware binding IDs
-- Sort modes (recent, name, most used)
-- Duplicate/move prompt actions
-- Preview autoplay setting and lazy media loading improvements
-- Migration framework for future database schema versions
+Focused 0.2.0 scope:
 
-## Explicit non-goals for 0.1
+- JSON export/import backup for workflows, bindings, groups, prompt sets and media references
+- Merge-style import: matching prompt IDs are updated while unrelated existing data is kept
+- Lightweight schema migration framework with explicit schema versioning
+- Stable `binding_key` for exposed text fields, used before the conservative unique `node_type + widget_name` fallback
+- Sort modes: recently used, recently saved, name and most used
+- Optional muted video-preview autoplay
+- Lazy video source loading near the visible sidebar area
+
+Explicitly removed from Phase 6 scope:
+
+- Duplicate prompt action
+- Move prompt action
+
+Cross-workflow reuse remains the existing **Copy to clipboard** behavior.
+
+## Product non-goals
 
 - Cloud sync
 - Prompt marketplace
