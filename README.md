@@ -179,7 +179,6 @@ Frontend syntax check:
 for file in web/*.js; do node --check "$file"; done
 ```
 
-See [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) for the implementation roadmap.
 
 ## Comfy Registry / Manager metadata
 

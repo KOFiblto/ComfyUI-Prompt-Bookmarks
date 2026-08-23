@@ -187,7 +187,6 @@ python -m unittest discover -s tests -v
 for file in web/*.js; do node --check "$file"; done
 ```
 
-开发路线见 [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md)。
 
 ## Comfy Registry / Manager
 
