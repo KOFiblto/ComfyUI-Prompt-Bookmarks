@@ -21,4 +21,7 @@ jobs:
         with:
           node-version: "22"
       - name: Frontend syntax check
-        run: node --check web/prompt_bookmarks.js
+        run: |
+          for file in web/*.js; do
+            node --check "$file"
+          done
