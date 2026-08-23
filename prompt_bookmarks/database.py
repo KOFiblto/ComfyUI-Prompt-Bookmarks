@@ -11,6 +11,10 @@ from typing import Any, Iterator
 
 from .fingerprint import fingerprint_fields
 
+SCHEMA_VERSION = 2
+BACKUP_FORMAT = "comfyui-prompt-bookmarks"
+BACKUP_FORMAT_VERSION = 1
+
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -38,10 +42,36 @@ class PromptBookmarksDB:
         finally:
             conn.close()
 
+    @staticmethod
+    def _columns(conn: sqlite3.Connection, table: str) -> set[str]:
+        return {str(row["name"]) for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+
+    def _set_schema_version(self, conn: sqlite3.Connection, version: int) -> None:
+        conn.execute(
+            "INSERT INTO meta(key, value) VALUES('schema_version', ?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            (str(version),),
+        )
+
+    def _migrate(self, conn: sqlite3.Connection, current: int) -> None:
+        version = current
+        if version < 2:
+            if "binding_key" not in self._columns(conn, "workflow_bindings"):
+                conn.execute("ALTER TABLE workflow_bindings ADD COLUMN binding_key TEXT NOT NULL DEFAULT ''")
+            version = 2
+            self._set_schema_version(conn, version)
+        if version != SCHEMA_VERSION:
+            raise RuntimeError(f"Unsupported Prompt Bookmarks schema version: {version}")
+
     def _init_schema(self) -> None:
         with self._lock, self._conn() as conn:
             conn.executescript(
                 """
+                CREATE TABLE IF NOT EXISTS meta (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                );
+
                 CREATE TABLE IF NOT EXISTS workflows (
                     workflow_id TEXT PRIMARY KEY,
                     name TEXT NOT NULL DEFAULT '',
@@ -56,6 +86,7 @@ class PromptBookmarksDB:
                     node_id TEXT NOT NULL,
                     node_type TEXT NOT NULL DEFAULT '',
                     widget_name TEXT NOT NULL,
+                    binding_key TEXT NOT NULL DEFAULT '',
                     label TEXT NOT NULL DEFAULT '',
                     sort_order INTEGER NOT NULL DEFAULT 0,
                     UNIQUE(workflow_id, node_id, widget_name),
@@ -107,6 +138,20 @@ class PromptBookmarksDB:
                 CREATE INDEX IF NOT EXISTS idx_media_prompt ON prompt_media(prompt_id, id DESC);
                 """
             )
+            row = conn.execute("SELECT value FROM meta WHERE key='schema_version'").fetchone()
+            if row is None:
+                # Existing 0.1.x databases predate schema metadata. Treat them as v1.
+                inferred = 2 if "binding_key" in self._columns(conn, "workflow_bindings") else 1
+                self._set_schema_version(conn, inferred)
+                current = inferred
+            else:
+                current = int(row["value"])
+            self._migrate(conn, current)
+
+    def schema_version(self) -> int:
+        with self._lock, self._conn() as conn:
+            row = conn.execute("SELECT value FROM meta WHERE key='schema_version'").fetchone()
+            return int(row["value"]) if row else 1
 
     @staticmethod
     def _row(row: sqlite3.Row | None) -> dict[str, Any] | None:
@@ -158,14 +203,16 @@ class PromptBookmarksDB:
             for index, binding in enumerate(bindings):
                 conn.execute(
                     """
-                    INSERT INTO workflow_bindings(workflow_id, node_id, node_type, widget_name, label, sort_order)
-                    VALUES(?, ?, ?, ?, ?, ?)
+                    INSERT INTO workflow_bindings(
+                        workflow_id, node_id, node_type, widget_name, binding_key, label, sort_order
+                    ) VALUES(?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         workflow_id,
                         str(binding.get("node_id", "")),
                         str(binding.get("node_type", "")),
                         str(binding.get("widget_name", "")),
+                        str(binding.get("binding_key", "")),
                         str(binding.get("label", "")),
                         int(binding.get("sort_order", index)),
                     ),
@@ -239,6 +286,7 @@ class PromptBookmarksDB:
         group_id: int | None = None,
         query: str = "",
         limit: int = 300,
+        sort: str = "recent",
     ) -> list[dict[str, Any]]:
         conditions: list[str] = []
         params: list[Any] = []
@@ -253,6 +301,12 @@ class PromptBookmarksDB:
             needle = f"%{query.strip()}%"
             params.extend([needle, needle, needle, needle])
         where = "WHERE " + " AND ".join(conditions) if conditions else ""
+        order_by = {
+            "recent": "COALESCE(p.last_used_at, p.updated_at) DESC, p.updated_at DESC",
+            "created": "p.created_at DESC, p.updated_at DESC",
+            "name": "p.name COLLATE NOCASE ASC, p.updated_at DESC",
+            "used": "p.use_count DESC, COALESCE(p.last_used_at, p.updated_at) DESC",
+        }.get(sort, "COALESCE(p.last_used_at, p.updated_at) DESC, p.updated_at DESC")
         params.append(max(1, min(limit, 1000)))
         sql = f"""
             SELECT p.*, g.name AS group_name, w.name AS workflow_name, w.path AS workflow_path,
@@ -269,7 +323,7 @@ class PromptBookmarksDB:
             LEFT JOIN groups g ON g.id=p.group_id
             JOIN workflows w ON w.workflow_id=p.workflow_id
             {where}
-            ORDER BY COALESCE(p.last_used_at, p.updated_at) DESC, p.updated_at DESC
+            ORDER BY {order_by}
             LIMIT ?
         """
         with self._lock, self._conn() as conn:
@@ -430,3 +484,269 @@ class PromptBookmarksDB:
                         ),
                     )
             return prompt_ids
+
+    def export_backup(self) -> dict[str, Any]:
+        with self._lock, self._conn() as conn:
+            workflows: list[dict[str, Any]] = []
+            for wf in conn.execute("SELECT * FROM workflows ORDER BY created_at, workflow_id").fetchall():
+                workflow_id = str(wf["workflow_id"])
+                bindings = [
+                    {
+                        "node_id": row["node_id"],
+                        "node_type": row["node_type"],
+                        "widget_name": row["widget_name"],
+                        "binding_key": row["binding_key"],
+                        "label": row["label"],
+                        "sort_order": row["sort_order"],
+                    }
+                    for row in conn.execute(
+                        "SELECT * FROM workflow_bindings WHERE workflow_id=? ORDER BY sort_order, id",
+                        (workflow_id,),
+                    ).fetchall()
+                ]
+                groups = [
+                    {"name": row["name"], "sort_order": row["sort_order"], "created_at": row["created_at"]}
+                    for row in conn.execute(
+                        "SELECT * FROM groups WHERE workflow_id=? ORDER BY sort_order, id",
+                        (workflow_id,),
+                    ).fetchall()
+                ]
+                group_names = {
+                    row["id"]: row["name"]
+                    for row in conn.execute("SELECT id, name FROM groups WHERE workflow_id=?", (workflow_id,)).fetchall()
+                }
+                prompts: list[dict[str, Any]] = []
+                for row in conn.execute(
+                    "SELECT * FROM prompts WHERE workflow_id=? ORDER BY created_at, id",
+                    (workflow_id,),
+                ).fetchall():
+                    prompt_id = str(row["id"])
+                    media = [
+                        {
+                            "prompt_execution_id": item["prompt_execution_id"],
+                            "filename": item["filename"],
+                            "subfolder": item["subfolder"],
+                            "type": item["type"],
+                            "media_type": item["media_type"],
+                            "created_at": item["created_at"],
+                        }
+                        for item in conn.execute(
+                            "SELECT * FROM prompt_media WHERE prompt_id=? ORDER BY id",
+                            (prompt_id,),
+                        ).fetchall()
+                    ]
+                    prompts.append(
+                        {
+                            "id": prompt_id,
+                            "name": row["name"],
+                            "group_name": group_names.get(row["group_id"]),
+                            "fields": json.loads(row["fields_json"]),
+                            "notes": row["notes"],
+                            "created_at": row["created_at"],
+                            "updated_at": row["updated_at"],
+                            "last_used_at": row["last_used_at"],
+                            "use_count": row["use_count"],
+                            "media": media,
+                        }
+                    )
+                workflows.append(
+                    {
+                        "workflow_id": workflow_id,
+                        "name": wf["name"],
+                        "path": wf["path"],
+                        "created_at": wf["created_at"],
+                        "updated_at": wf["updated_at"],
+                        "bindings": bindings,
+                        "groups": groups,
+                        "prompts": prompts,
+                    }
+                )
+            return {
+                "format": BACKUP_FORMAT,
+                "format_version": BACKUP_FORMAT_VERSION,
+                "schema_version": SCHEMA_VERSION,
+                "exported_at": utc_now(),
+                "workflows": workflows,
+            }
+
+    def import_backup(self, data: dict[str, Any]) -> dict[str, int]:
+        if data.get("format") != BACKUP_FORMAT or int(data.get("format_version", 0)) != BACKUP_FORMAT_VERSION:
+            raise ValueError("Unsupported Prompt Bookmarks backup format")
+        workflows = data.get("workflows")
+        if not isinstance(workflows, list):
+            raise ValueError("Backup workflows must be an array")
+
+        counts = {"workflows": 0, "bindings": 0, "groups": 0, "prompts": 0, "media": 0}
+        now = utc_now()
+        with self._lock, self._conn() as conn:
+            for wf in workflows:
+                if not isinstance(wf, dict):
+                    raise ValueError("Invalid workflow entry in backup")
+                workflow_id = str(wf.get("workflow_id", "")).strip()
+                if not workflow_id:
+                    raise ValueError("Backup workflow_id is required")
+                created_at = str(wf.get("created_at") or now)
+                updated_at = str(wf.get("updated_at") or created_at)
+                conn.execute(
+                    """
+                    INSERT INTO workflows(workflow_id, name, path, created_at, updated_at)
+                    VALUES(?, ?, ?, ?, ?)
+                    ON CONFLICT(workflow_id) DO UPDATE SET
+                        name=excluded.name,
+                        path=excluded.path,
+                        updated_at=excluded.updated_at
+                    """,
+                    (workflow_id, str(wf.get("name", "")), str(wf.get("path", "")), created_at, updated_at),
+                )
+                counts["workflows"] += 1
+
+                bindings = wf.get("bindings", [])
+                if not isinstance(bindings, list):
+                    raise ValueError("Backup bindings must be an array")
+                conn.execute("DELETE FROM workflow_bindings WHERE workflow_id=?", (workflow_id,))
+                for index, binding in enumerate(bindings):
+                    if not isinstance(binding, dict):
+                        continue
+                    node_id = str(binding.get("node_id", ""))
+                    widget_name = str(binding.get("widget_name", ""))
+                    if not node_id or not widget_name:
+                        continue
+                    conn.execute(
+                        """
+                        INSERT INTO workflow_bindings(
+                            workflow_id, node_id, node_type, widget_name, binding_key, label, sort_order
+                        ) VALUES(?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            workflow_id,
+                            node_id,
+                            str(binding.get("node_type", "")),
+                            widget_name,
+                            str(binding.get("binding_key", "")),
+                            str(binding.get("label", "")),
+                            int(binding.get("sort_order", index)),
+                        ),
+                    )
+                    counts["bindings"] += 1
+
+                group_map: dict[str, int] = {}
+                groups = wf.get("groups", [])
+                if not isinstance(groups, list):
+                    raise ValueError("Backup groups must be an array")
+                for index, group in enumerate(groups):
+                    if not isinstance(group, dict):
+                        continue
+                    name = str(group.get("name", "")).strip()
+                    if not name:
+                        continue
+                    row = conn.execute(
+                        "SELECT id FROM groups WHERE workflow_id=? AND name=?",
+                        (workflow_id, name),
+                    ).fetchone()
+                    if row:
+                        group_id = int(row["id"])
+                        conn.execute(
+                            "UPDATE groups SET sort_order=? WHERE id=?",
+                            (int(group.get("sort_order", index)), group_id),
+                        )
+                    else:
+                        cur = conn.execute(
+                            "INSERT INTO groups(workflow_id, name, sort_order, created_at) VALUES(?, ?, ?, ?)",
+                            (workflow_id, name, int(group.get("sort_order", index)), str(group.get("created_at") or now)),
+                        )
+                        group_id = int(cur.lastrowid)
+                    group_map[name] = group_id
+                    counts["groups"] += 1
+
+                prompts = wf.get("prompts", [])
+                if not isinstance(prompts, list):
+                    raise ValueError("Backup prompts must be an array")
+                for prompt in prompts:
+                    if not isinstance(prompt, dict):
+                        continue
+                    prompt_id = str(prompt.get("id", "")).strip()
+                    name = str(prompt.get("name", "")).strip()
+                    fields = prompt.get("fields", [])
+                    if not prompt_id or not name or not isinstance(fields, list) or not fields:
+                        raise ValueError("Invalid prompt entry in backup")
+                    group_name = str(prompt.get("group_name") or "").strip()
+                    group_id = group_map.get(group_name) if group_name else None
+                    if group_name and group_id is None:
+                        row = conn.execute(
+                            "SELECT id FROM groups WHERE workflow_id=? AND name=?",
+                            (workflow_id, group_name),
+                        ).fetchone()
+                        if row:
+                            group_id = int(row["id"])
+                        else:
+                            cur = conn.execute(
+                                "INSERT INTO groups(workflow_id, name, sort_order, created_at) VALUES(?, ?, ?, ?)",
+                                (workflow_id, group_name, len(group_map), now),
+                            )
+                            group_id = int(cur.lastrowid)
+                        group_map[group_name] = group_id
+                    fields_json = json.dumps(fields, ensure_ascii=False, separators=(",", ":"))
+                    created_at = str(prompt.get("created_at") or now)
+                    updated_at = str(prompt.get("updated_at") or created_at)
+                    conn.execute(
+                        """
+                        INSERT INTO prompts(
+                            id, workflow_id, group_id, name, fields_json, fingerprint, notes,
+                            created_at, updated_at, last_used_at, use_count
+                        ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(id) DO UPDATE SET
+                            workflow_id=excluded.workflow_id,
+                            group_id=excluded.group_id,
+                            name=excluded.name,
+                            fields_json=excluded.fields_json,
+                            fingerprint=excluded.fingerprint,
+                            notes=excluded.notes,
+                            created_at=excluded.created_at,
+                            updated_at=excluded.updated_at,
+                            last_used_at=excluded.last_used_at,
+                            use_count=excluded.use_count
+                        """,
+                        (
+                            prompt_id,
+                            workflow_id,
+                            group_id,
+                            name,
+                            fields_json,
+                            fingerprint_fields(fields),
+                            str(prompt.get("notes", "")),
+                            created_at,
+                            updated_at,
+                            prompt.get("last_used_at"),
+                            max(0, int(prompt.get("use_count", 0) or 0)),
+                        ),
+                    )
+                    counts["prompts"] += 1
+
+                    media = prompt.get("media", [])
+                    if not isinstance(media, list):
+                        raise ValueError("Backup media must be an array")
+                    for item in media:
+                        if not isinstance(item, dict):
+                            continue
+                        filename = str(item.get("filename", "")).strip()
+                        if not filename:
+                            continue
+                        cur = conn.execute(
+                            """
+                            INSERT OR IGNORE INTO prompt_media(
+                                prompt_id, prompt_execution_id, filename, subfolder, type, media_type, created_at
+                            ) VALUES(?, ?, ?, ?, ?, ?, ?)
+                            """,
+                            (
+                                prompt_id,
+                                str(item.get("prompt_execution_id", "")),
+                                filename,
+                                str(item.get("subfolder", "")),
+                                str(item.get("type", "output")),
+                                str(item.get("media_type", "image")),
+                                str(item.get("created_at") or now),
+                            ),
+                        )
+                        if cur.rowcount > 0:
+                            counts["media"] += 1
+        return counts

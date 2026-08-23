@@ -5,6 +5,8 @@ const EXTENSION_NAME = "vdeng.PromptBookmarks";
 const API_BASE = "/prompt-bookmarks";
 const LANG_SETTING = "PromptBookmarks.Language";
 const AUTOLINK_SETTING = "PromptBookmarks.AutoLinkMedia";
+const SORT_SETTING = "PromptBookmarks.SortMode";
+const AUTOPLAY_SETTING = "PromptBookmarks.PreviewAutoplay";
 
 const state = {
   root: null,
@@ -17,6 +19,7 @@ const state = {
   groupId: null,
   allGroupName: null,
   search: "",
+  sort: "recent",
   lastWorkflowKey: "",
   lastLanguage: "",
   autoPromptedWorkflowKey: "",
@@ -72,6 +75,19 @@ const I18N = {
     copyFailed: "复制失败",
     mediaCount: "{count} 个预览",
     previewUnavailable: "预览文件已失效",
+    sort: "排序",
+    sortRecent: "最近使用",
+    sortCreated: "最近收藏",
+    sortName: "名称",
+    sortUsed: "使用次数",
+    backup: "数据备份",
+    exportBackup: "导出 JSON",
+    importBackup: "导入 JSON",
+    backupExported: "备份已导出",
+    backupImported: "备份已导入",
+    importBackupConfirm: "导入备份？同 ID 的收藏会更新，其他现有数据会保留。",
+    invalidBackup: "备份文件无效",
+    previewAutoplay: "视频预览自动播放",
     workflow: "工作流",
     openWorkflow: "打开一个工作流后即可使用提示词收藏。",
     noBindings: "还没有选择这个工作流需要收藏的提示词字段。",
@@ -139,6 +155,19 @@ const I18N = {
     copyFailed: "Copy failed",
     mediaCount: "{count} previews",
     previewUnavailable: "Preview file is no longer available",
+    sort: "Sort",
+    sortRecent: "Recently used",
+    sortCreated: "Recently saved",
+    sortName: "Name",
+    sortUsed: "Most used",
+    backup: "Data backup",
+    exportBackup: "Export JSON",
+    importBackup: "Import JSON",
+    backupExported: "Backup exported",
+    backupImported: "Backup imported",
+    importBackupConfirm: "Import this backup? Matching bookmark IDs will be updated and other existing data will be kept.",
+    invalidBackup: "Invalid backup file",
+    previewAutoplay: "Autoplay video previews",
     workflow: "Workflow",
     openWorkflow: "Open a workflow to start using Prompt Bookmarks.",
     noBindings: "No prompt fields are selected for this workflow yet.",
@@ -187,9 +216,19 @@ function refreshExtensionLabels() {
     ];
   }
   const autoLinkSetting = settings?.[AUTOLINK_SETTING];
-  if (autoLinkSetting) {
-    autoLinkSetting.name = t("autoLink");
+  if (autoLinkSetting) autoLinkSetting.name = t("autoLink");
+  const sortSetting = settings?.[SORT_SETTING];
+  if (sortSetting) {
+    sortSetting.name = t("sort");
+    sortSetting.options = [
+      { value: "recent", text: t("sortRecent") },
+      { value: "created", text: t("sortCreated") },
+      { value: "name", text: t("sortName") },
+      { value: "used", text: t("sortUsed") },
+    ];
   }
+  const autoplaySetting = settings?.[AUTOPLAY_SETTING];
+  if (autoplaySetting) autoplaySetting.name = t("previewAutoplay");
   const tab = app.extensionManager?.getSidebarTabs?.().find((item) => item.id === "prompt-bookmarks");
   if (tab) {
     tab.title = t("title");
@@ -267,29 +306,13 @@ async function resolveWorkflowIdentity(info) {
   const workflows = await request("/workflows") || [];
   const legacy = workflows.find((item) => String(item.workflow_id) === info.sourceId);
   if (!legacy || sameWorkflowLocation(legacy, info)) return { ...info, id: info.sourceId };
-  const collisionId = collisionWorkflowId(info);
-  return { ...info, id: collisionId };
+  return { ...info, id: collisionWorkflowId(info) };
 }
 function findNode(nodeId) {
   return app.graph?.getNodeById?.(Number.isNaN(Number(nodeId)) ? nodeId : Number(nodeId)) || app.graph?.getNodeById?.(String(nodeId)) || null;
 }
 function nodeTitle(node) { return String(node?.title || node?.type || node?.comfyClass || "Node"); }
 function nodeType(node) { return String(node?.comfyClass || node?.type || node?.constructor?.type || ""); }
-function resolveLiveField(field) {
-  const exactNode = findNode(field.node_id);
-  const exactWidget = exactNode?.widgets?.find?.((widget) => widget?.name === field.widget_name);
-  if (exactWidget) return { node: exactNode, widget: exactWidget, recovered: false };
-  const wantedType = String(field.node_type || "");
-  if (!wantedType || !field.widget_name) return null;
-  const matches = [];
-  for (const node of app.graph?._nodes || []) {
-    if (nodeType(node) !== wantedType) continue;
-    const widget = node?.widgets?.find?.((item) => item?.name === field.widget_name);
-    if (widget) matches.push({ node, widget });
-  }
-  if (matches.length !== 1) return null;
-  return { ...matches[0], recovered: true };
-}
 function rectContains(group, node) {
   const gb = group?._bounding || group?.bounding || null; const pos = node?.pos || [0, 0]; const size = node?.size || [0, 0];
   if (!Array.isArray(gb) || gb.length < 4) return false;
@@ -301,6 +324,31 @@ function groupPathForNode(node) {
   groups.sort((a, b) => ((b?._bounding?.[2] || 0) * (b?._bounding?.[3] || 0)) - ((a?._bounding?.[2] || 0) * (a?._bounding?.[3] || 0)));
   return groups.map((g) => String(g.title || "Group"));
 }
+function bindingKey(node, widgetName) {
+  const groupPath = groupPathForNode(node).join("/");
+  return [nodeType(node), nodeTitle(node), groupPath, String(widgetName || "")].map((v) => encodeURIComponent(v)).join("|");
+}
+function resolveLiveField(field) {
+  const exactNode = findNode(field.node_id);
+  const exactWidget = exactNode?.widgets?.find?.((widget) => widget?.name === field.widget_name);
+  if (exactWidget) return { node: exactNode, widget: exactWidget, recovered: false };
+  const wantedType = String(field.node_type || "");
+  if (!wantedType || !field.widget_name) return null;
+  const matches = [];
+  for (const node of app.graph?._nodes || []) {
+    if (nodeType(node) !== wantedType) continue;
+    const widget = node?.widgets?.find?.((item) => item?.name === field.widget_name);
+    if (!widget) continue;
+    matches.push({ node, widget, key: bindingKey(node, field.widget_name) });
+  }
+  const storedKey = String(field.binding_key || "");
+  if (storedKey) {
+    const keyed = matches.filter((item) => item.key === storedKey);
+    if (keyed.length === 1) return { node: keyed[0].node, widget: keyed[0].widget, recovered: true };
+  }
+  if (matches.length !== 1) return null;
+  return { node: matches[0].node, widget: matches[0].widget, recovered: true };
+}
 function promptCandidates() {
   const out = [];
   const likely = /(prompt|text|positive|negative|caption|instruction|description|motion|camera|scene|character)/i;
@@ -310,11 +358,11 @@ function promptCandidates() {
     for (const widget of node.widgets || []) {
       if (!widget?.name || typeof widget.value !== "string") continue;
       const name = String(widget.name); if (reject.test(name)) continue;
-      const title = nodeTitle(node); const type = String(node.comfyClass || node.type || node.constructor?.type || "");
+      const title = nodeTitle(node); const type = nodeType(node);
       const groupPath = groupPathForNode(node); const displayPath = [...groupPath, title, name].join(" › ");
       const isNote = noteLike.test(`${title} ${type}`);
       out.push({
-        node_id: String(node.id), node_type: type, widget_name: name, label: `${title} · ${name}`,
+        node_id: String(node.id), node_type: type, widget_name: name, binding_key: bindingKey(node, name), label: `${title} · ${name}`,
         display_path: displayPath, group_path: groupPath, preview: String(widget.value || ""),
         note_like: isNote,
         recommended: !isNote && (likely.test(name) || likely.test(title)),
@@ -335,12 +383,21 @@ function locateNode(nodeId) {
     node.setDirtyCanvas?.(true, true); app.graph?.setDirtyCanvas?.(true, true);
   } catch (_) { notify("warn", t("locateFailed")); }
 }
+function currentField(binding, target) {
+  return {
+    node_id: String(binding.node_id),
+    node_type: String(binding.node_type || nodeType(target.node)),
+    widget_name: String(binding.widget_name),
+    binding_key: String(binding.binding_key || bindingKey(target.node, binding.widget_name)),
+    label: String(binding.label || binding.widget_name),
+    value: target.widget.value,
+  };
+}
 function collectCurrentFields() {
   const fields = [];
   for (const binding of state.bindings) {
     const target = resolveLiveField(binding);
-    if (!target) continue;
-    fields.push({ node_id: String(binding.node_id), node_type: String(binding.node_type || nodeType(target.node)), widget_name: String(binding.widget_name), label: String(binding.label || binding.widget_name), value: target.widget.value });
+    if (target) fields.push(currentField(binding, target));
   }
   return fields;
 }
@@ -369,7 +426,9 @@ async function configureBindings() {
     row.append(check, main, button(t("locate"), () => locateNode(c.node_id))); dlg.body.appendChild(row);
   }
   dlg.foot.append(button(t("cancel"), () => dlg.overlay.remove()), button(t("saveSelection"), async () => {
-    const bindings = candidates.filter((c) => selected.has(`${c.node_id}::${c.widget_name}`)).map((c, index) => ({ node_id: c.node_id, node_type: c.node_type, widget_name: c.widget_name, label: c.label, sort_order: index }));
+    const bindings = candidates.filter((c) => selected.has(`${c.node_id}::${c.widget_name}`)).map((c, index) => ({
+      node_id: c.node_id, node_type: c.node_type, widget_name: c.widget_name, binding_key: c.binding_key, label: c.label, sort_order: index,
+    }));
     await request("/bindings", { method: "PUT", body: JSON.stringify({ workflow_id: state.workflow.id, bindings }) });
     state.bindings = await request(`/bindings?workflow_id=${encodeURIComponent(state.workflow.id)}`) || [];
     dlg.overlay.remove(); render(); notify("success", t("selectionSaved"), t("fieldConfigured", { count: state.bindings.length }));
@@ -453,7 +512,7 @@ function isVideo(media) { return media?.media_type === "video" || /\.(mp4|webm|m
 
 async function loadPrompts() {
   if (!state.workflow && !state.allMode) { state.prompts = []; state.allGroups = []; render(); return; }
-  const params = new URLSearchParams({ limit: "500" });
+  const params = new URLSearchParams({ limit: "500", sort: state.sort || "recent" });
   if (!state.allMode && state.workflow) params.set("workflow_id", state.workflow.id);
   if (!state.allMode && state.groupId != null) params.set("group_id", String(state.groupId));
   if (state.search.trim()) params.set("q", state.search.trim());
@@ -481,6 +540,35 @@ async function loadData() {
   await loadPrompts(); maybeAutoConfigure();
 }
 
+function downloadJson(filename, value) {
+  const blob = new Blob([JSON.stringify(value, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+async function exportBackup() {
+  const data = await request("/backup");
+  const stamp = new Date().toISOString().slice(0, 10);
+  downloadJson(`prompt-bookmarks-${stamp}.json`, data);
+  notify("success", t("backupExported"));
+}
+async function importBackup() {
+  const input = document.createElement("input"); input.type = "file"; input.accept = "application/json,.json";
+  input.onchange = async () => {
+    const file = input.files?.[0]; if (!file) return;
+    let data;
+    try { data = JSON.parse(await file.text()); } catch (_) { notify("error", t("title"), t("invalidBackup")); return; }
+    if (!window.confirm(t("importBackupConfirm"))) return;
+    try {
+      await request("/backup/import", { method: "POST", body: JSON.stringify(data) });
+      if (state.workflow) await loadData(); else await loadPrompts();
+      notify("success", t("backupImported"));
+    } catch (err) { notify("error", t("title"), String(err?.message || err)); }
+  };
+  input.click();
+}
+
 function showSettings() {
   const dlg = openDialog(t("settings"));
   const languageRow = document.createElement("div"); languageRow.className = "pb-settings-row";
@@ -492,10 +580,34 @@ function showSettings() {
   languageSelect.value = settingGet(LANG_SETTING, "auto");
   languageSelect.onchange = async () => { await app.extensionManager?.setting?.set?.(LANG_SETTING, languageSelect.value); refreshExtensionLabels(); dlg.overlay.remove(); render(); showSettings(); };
   languageRow.append(languageText, languageSelect); dlg.body.appendChild(languageRow);
+
   const autoRow = document.createElement("div"); autoRow.className = "pb-settings-row";
   const autoText = document.createElement("div"); autoText.textContent = t("autoLink");
   const auto = document.createElement("input"); auto.type = "checkbox"; auto.checked = settingGet(AUTOLINK_SETTING, true) !== false;
   auto.onchange = () => app.extensionManager?.setting?.set?.(AUTOLINK_SETTING, auto.checked); autoRow.append(autoText, auto); dlg.body.appendChild(autoRow);
+
+  const sortRow = document.createElement("div"); sortRow.className = "pb-settings-row";
+  const sortText = document.createElement("div"); sortText.textContent = t("sort");
+  const sortSelect = document.createElement("select"); sortSelect.className = "pb-select";
+  for (const [value, label] of [["recent", t("sortRecent")], ["created", t("sortCreated")], ["name", t("sortName")], ["used", t("sortUsed")]]) {
+    const option = document.createElement("option"); option.value = value; option.textContent = label; sortSelect.appendChild(option);
+  }
+  sortSelect.value = state.sort || settingGet(SORT_SETTING, "recent");
+  sortSelect.onchange = async () => { state.sort = sortSelect.value; await app.extensionManager?.setting?.set?.(SORT_SETTING, state.sort); await loadPrompts(); };
+  sortRow.append(sortText, sortSelect); dlg.body.appendChild(sortRow);
+
+  const autoplayRow = document.createElement("div"); autoplayRow.className = "pb-settings-row";
+  const autoplayText = document.createElement("div"); autoplayText.textContent = t("previewAutoplay");
+  const autoplay = document.createElement("input"); autoplay.type = "checkbox"; autoplay.checked = settingGet(AUTOPLAY_SETTING, false) === true;
+  autoplay.onchange = async () => { await app.extensionManager?.setting?.set?.(AUTOPLAY_SETTING, autoplay.checked); window.dispatchEvent(new CustomEvent("prompt-bookmarks-autoplay-changed")); };
+  autoplayRow.append(autoplayText, autoplay); dlg.body.appendChild(autoplayRow);
+
+  const backupRow = document.createElement("div"); backupRow.className = "pb-settings-row";
+  const backupText = document.createElement("div"); backupText.textContent = t("backup");
+  const backupActions = document.createElement("div"); backupActions.className = "pb-row";
+  backupActions.append(button(t("exportBackup"), exportBackup), button(t("importBackup"), importBackup));
+  backupRow.append(backupText, backupActions); dlg.body.appendChild(backupRow);
+
   if (state.workflow) {
     const promptRow = document.createElement("div"); promptRow.className = "pb-settings-row";
     const promptInfo = document.createElement("div"); promptInfo.innerHTML = `<div>${t("promptFields")}</div><div class="pb-help">${t("fieldConfigured", { count: state.bindings.length })}</div>`;
@@ -508,13 +620,17 @@ function showSettings() {
 function renderCard(prompt) {
   const card = document.createElement("div"); card.className = "pb-card";
   if (prompt.latest_media) {
-    const media = isVideo(prompt.latest_media) ? document.createElement("video") : document.createElement("img"); media.className = "pb-media"; media.src = mediaUrl(prompt.latest_media);
+    const media = isVideo(prompt.latest_media) ? document.createElement("video") : document.createElement("img");
+    media.className = "pb-media";
+    const src = mediaUrl(prompt.latest_media);
+    if (media.tagName === "VIDEO") media.dataset.pbSrc = src; else media.src = src;
     media.addEventListener("error", () => {
       if (!media.isConnected) return;
       const missing = document.createElement("div"); missing.className = "pb-media-missing"; missing.textContent = t("previewUnavailable");
       media.replaceWith(missing);
     }, { once: true });
-    if (media.tagName === "VIDEO") { media.controls = true; media.muted = true; media.preload = "metadata"; } else media.loading = "lazy"; card.appendChild(media);
+    if (media.tagName === "VIDEO") { media.controls = true; media.muted = true; media.preload = "none"; } else media.loading = "lazy";
+    card.appendChild(media);
   }
   const body = document.createElement("div"); body.className = "pb-cardbody";
   const title = document.createElement("div"); title.className = "pb-cardtitle"; title.textContent = prompt.name; body.appendChild(title);
@@ -537,20 +653,17 @@ async function renameSelectedGroup() {
   const cleaned = value.trim();
   if (!cleaned || cleaned === group.name) return;
   if ((state.groups || []).some((item) => item.id !== group.id && String(item.name || "").toLowerCase() === cleaned.toLowerCase())) {
-    notify("warn", t("renameGroup"), t("groupNameExists"));
-    return;
+    notify("warn", t("renameGroup"), t("groupNameExists")); return;
   }
   await request(`/groups/${encodeURIComponent(group.id)}`, { method: "PUT", body: JSON.stringify({ name: cleaned }) });
-  await loadData();
-  notify("success", t("groupRenamed"), cleaned);
+  await loadData(); notify("success", t("groupRenamed"), cleaned);
 }
 async function deleteGroup(group) {
   if (Number(group?.prompt_count || 0) !== 0) return;
   if (!window.confirm(t("deleteGroupConfirm", { name: group.name }))) return;
   await request(`/groups/${encodeURIComponent(group.id)}`, { method: "DELETE" });
   if (state.groupId === group.id) state.groupId = null;
-  await loadData();
-  notify("success", t("groupDeleted"), group.name);
+  await loadData(); notify("success", t("groupDeleted"), group.name);
 }
 function renderGroupFilters(head) {
   const groups = document.createElement("div"); groups.className = "pb-groups";
@@ -567,13 +680,9 @@ function renderGroupFilters(head) {
           button("×", () => deleteGroup(g), "pb-group-delete"),
         );
         groups.appendChild(wrap);
-      } else {
-        groups.appendChild(button(g.name, async () => { state.groupId = g.id; await loadPrompts(); }, `pb-chip ${state.groupId === g.id ? "active" : ""}`));
-      }
+      } else groups.appendChild(button(g.name, async () => { state.groupId = g.id; await loadPrompts(); }, `pb-chip ${state.groupId === g.id ? "active" : ""}`));
     }
-    if (state.groupId != null) {
-      const edit = button("✎", renameSelectedGroup, "pb-chip pb-group-edit"); edit.title = t("renameGroup"); groups.appendChild(edit);
-    }
+    if (state.groupId != null) { const edit = button("✎", renameSelectedGroup, "pb-chip pb-group-edit"); edit.title = t("renameGroup"); groups.appendChild(edit); }
   }
   if (groups.childElementCount) head.appendChild(groups);
 }
@@ -616,10 +725,7 @@ function extractPromptGraph(history) {
 function extractWorkflowSnapshot(history) {
   const p = history?.prompt;
   if (Array.isArray(p)) return p?.[3]?.extra_pnginfo?.workflow || p?.[3]?.workflow || null;
-  return p?.extra_data?.extra_pnginfo?.workflow
-    || history?.extra_data?.extra_pnginfo?.workflow
-    || history?.workflow?.extra_data?.extra_pnginfo?.workflow
-    || null;
+  return p?.extra_data?.extra_pnginfo?.workflow || history?.extra_data?.extra_pnginfo?.workflow || history?.workflow?.extra_data?.extra_pnginfo?.workflow || null;
 }
 function extractWorkflowSourceId(history) {
   if (history?.workflow_id) return String(history.workflow_id);
@@ -652,16 +758,12 @@ function workflowSnapshotValue(history, binding) {
   const workflowNode = snapshotNodeForBinding(workflow, binding);
   const values = workflowNode?.widgets_values;
   if (!Array.isArray(values) || !values.length) return { found: false, value: undefined };
-
   let widgetIndex = Number(binding.widget_index ?? -1);
   if (!Number.isInteger(widgetIndex) || widgetIndex < 0 || widgetIndex >= values.length) {
     const liveNode = resolveLiveField(binding)?.node || null;
     const liveIndex = liveNode?.widgets?.findIndex?.((widget) => widget?.name === binding.widget_name) ?? -1;
     if (liveIndex >= 0 && liveIndex < values.length) widgetIndex = liveIndex;
   }
-  // Primitive/Input Text nodes normally serialize exactly one widget.
-  // This fallback also helps exposed virtual/group widgets when their
-  // execution node is intentionally omitted from the API prompt.
   if ((!Number.isInteger(widgetIndex) || widgetIndex < 0 || widgetIndex >= values.length) && values.length === 1) widgetIndex = 0;
   if (!Number.isInteger(widgetIndex) || widgetIndex < 0 || widgetIndex >= values.length) return { found: false, value: undefined };
   return { found: true, value: values[widgetIndex] };
@@ -671,11 +773,7 @@ function historyNodeForBinding(graph, binding) {
   if (exact?.inputs && Object.prototype.hasOwnProperty.call(exact.inputs, binding.widget_name)) return exact;
   const wantedType = String(binding.node_type || "");
   if (!wantedType) return exact || null;
-  const matches = Object.values(graph || {}).filter((node) =>
-    String(node?.class_type || "") === wantedType
-    && node?.inputs
-    && Object.prototype.hasOwnProperty.call(node.inputs, binding.widget_name)
-  );
+  const matches = Object.values(graph || {}).filter((node) => String(node?.class_type || "") === wantedType && node?.inputs && Object.prototype.hasOwnProperty.call(node.inputs, binding.widget_name));
   return matches.length === 1 ? matches[0] : exact || null;
 }
 function fieldsFromHistory(history, bindings) {
@@ -685,16 +783,11 @@ function fieldsFromHistory(history, bindings) {
     let found = false; let value;
     if (node?.inputs && Object.prototype.hasOwnProperty.call(node.inputs, b.widget_name)) {
       const input = node.inputs[b.widget_name];
-      if (!(Array.isArray(input) && input.length === 2)) {
-        value = unwrapPromptValue(input); found = true;
-      }
+      if (!(Array.isArray(input) && input.length === 2)) { value = unwrapPromptValue(input); found = true; }
     }
-    if (!found) {
-      const snapshot = workflowSnapshotValue(history, b);
-      if (snapshot.found) { value = snapshot.value; found = true; }
-    }
+    if (!found) { const snapshot = workflowSnapshotValue(history, b); if (snapshot.found) { value = snapshot.value; found = true; } }
     if (!found) continue;
-    fields.push({ node_id: String(b.node_id), node_type: String(b.node_type || node?.class_type || ""), widget_name: String(b.widget_name), label: String(b.label || b.widget_name), value });
+    fields.push({ node_id: String(b.node_id), node_type: String(b.node_type || node?.class_type || ""), widget_name: String(b.widget_name), binding_key: String(b.binding_key || ""), label: String(b.label || b.widget_name), value });
   }
   return fields;
 }
@@ -703,10 +796,8 @@ function addLiveFieldFallback(fields, bindings, workflowId) {
   const keys = new Set(fields.map((field) => `${field.node_id}::${field.widget_name}`));
   for (const b of bindings) {
     const key = `${b.node_id}::${b.widget_name}`; if (keys.has(key)) continue;
-    const target = resolveLiveField(b);
-    if (!target) continue;
-    fields.push({ node_id: String(b.node_id), node_type: String(b.node_type || nodeType(target.node)), widget_name: String(b.widget_name), label: String(b.label || b.widget_name), value: target.widget.value });
-    keys.add(key);
+    const target = resolveLiveField(b); if (!target) continue;
+    fields.push(currentField(b, target)); keys.add(key);
   }
   return fields;
 }
@@ -748,9 +839,7 @@ async function onExecutionSuccess(event) {
     if (result?.linked_prompt_ids?.length) {
       console.debug("[Prompt Bookmarks] media auto-link: linked", { promptId, workflowId, promptIds: result.linked_prompt_ids, mediaCount: media.length });
       if (state.workflow?.id === workflowId) await loadPrompts();
-    } else {
-      console.debug("[Prompt Bookmarks] media auto-link: no saved prompt fingerprint matched", { promptId, workflowId, fieldCount: fields.length, mediaCount: media.length });
-    }
+    } else console.debug("[Prompt Bookmarks] media auto-link: no saved prompt fingerprint matched", { promptId, workflowId, fieldCount: fields.length, mediaCount: media.length });
   } catch (err) { console.warn("[Prompt Bookmarks] media auto-link failed", err); }
 }
 
@@ -765,14 +854,25 @@ app.registerExtension({
       defaultValue: "auto",
       onChange: () => setTimeout(() => { refreshExtensionLabels(); render(); }, 0),
     },
+    { id: AUTOLINK_SETTING, name: "Automatically link generated media", type: "boolean", defaultValue: true },
     {
-      id: AUTOLINK_SETTING,
-      name: "Automatically link generated media",
+      id: SORT_SETTING,
+      name: "Sort",
+      type: "combo",
+      options: [{ value: "recent", text: "Recently used" }, { value: "created", text: "Recently saved" }, { value: "name", text: "Name" }, { value: "used", text: "Most used" }],
+      defaultValue: "recent",
+      onChange: () => setTimeout(() => { state.sort = settingGet(SORT_SETTING, "recent") || "recent"; if (state.root) loadPrompts().catch(console.error); }, 0),
+    },
+    {
+      id: AUTOPLAY_SETTING,
+      name: "Autoplay video previews",
       type: "boolean",
-      defaultValue: true,
+      defaultValue: false,
+      onChange: () => setTimeout(() => window.dispatchEvent(new CustomEvent("prompt-bookmarks-autoplay-changed")), 0),
     },
   ],
   async setup() {
+    state.sort = settingGet(SORT_SETTING, "recent") || "recent";
     injectStyles();
     refreshExtensionLabels();
     app.extensionManager.registerSidebarTab({

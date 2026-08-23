@@ -65,7 +65,22 @@ def register_routes() -> None:
     @routes.get("/prompt-bookmarks/health")
     async def health(_request: web.Request) -> web.Response:
         db = get_db()
-        return _ok({"version": "0.1.0", "database": str(db.path)})
+        return _ok({"version": "0.2.0", "schema_version": db.schema_version(), "database": str(db.path)})
+
+    @routes.get("/prompt-bookmarks/backup")
+    async def backup_get(_request: web.Request) -> web.Response:
+        return _ok(get_db().export_backup())
+
+    @routes.post("/prompt-bookmarks/backup/import")
+    async def backup_import(request: web.Request) -> web.Response:
+        try:
+            data = await _json(request)
+            return _ok(get_db().import_backup(data))
+        except ValueError as exc:
+            return _error(str(exc))
+        except Exception:
+            LOGGER.exception("Failed to import Prompt Bookmarks backup")
+            return _error("Failed to import backup", 500)
 
     @routes.get("/prompt-bookmarks/workflows")
     async def workflows_get(_request: web.Request) -> web.Response:
@@ -159,6 +174,7 @@ def register_routes() -> None:
                 group_id=group_id,
                 query=request.query.get("q", ""),
                 limit=limit,
+                sort=request.query.get("sort", "recent"),
             )
         )
 

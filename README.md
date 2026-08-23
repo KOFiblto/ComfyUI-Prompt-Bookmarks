@@ -51,6 +51,7 @@ If you are searching for a **ComfyUI prompt manager**, **prompt library**, **pro
 - **Locate** action to jump to the source node on the canvas
 - Normal ComfyUI group path display
 - Supports editable text widgets exposed by Group Nodes / Subgraphs
+- More resilient exposed-field matching when node IDs change, while avoiding ambiguous guesses
 - Save multiple fields as one bookmark, such as:
   - main prompt
   - motion/camera prompt
@@ -58,10 +59,13 @@ If you are searching for a **ComfyUI prompt manager**, **prompt library**, **pro
 - Organize prompts by **workflow + group**
 - Delete empty groups safely
 - Search saved prompts
+- Sort by recently used, recently saved, name, or use count
 - One-click restore/apply inside the matching workflow
 - Copy prompts from any workflow, with a clipboard fallback for non-secure/local HTTP environments
-- SQLite persistence under the ComfyUI user directory
+- Export and import a portable JSON backup of prompt data and media references
+- SQLite persistence under the ComfyUI user directory with lightweight schema migrations
 - Best-effort automatic image/video preview linking after successful executions
+- Lazy video preview loading with optional muted autoplay
 - Generated media is referenced, **not duplicated**
 
 ## Installation
@@ -101,7 +105,7 @@ Restart ComfyUI and refresh the browser. A bookmark icon will appear in the side
 6. Give it a name and optional group.
 7. Later, click **Apply** to restore those fields or **Copy** to reuse the text elsewhere.
 
-Prompt Bookmarks stores node IDs and widget names internally only so it can find the selected fields again. You never need to manage those identifiers yourself.
+Prompt Bookmarks stores node/widget binding metadata internally only so it can find the selected fields again. You never need to manage those identifiers yourself.
 
 ## What it does not do
 
@@ -117,7 +121,7 @@ Prompt Bookmarks follows a conservative compatibility rule:
 - **Group Nodes / Subgraphs with exposed text widgets** — supported through the widgets visible on the outer node.
 - **Hidden internal Subgraph widgets** — not modified directly. Expose the desired field first.
 
-This avoids fragile deep graph bindings and keeps the extension compatible with changing ComfyUI frontend internals.
+For exposed fields, Prompt Bookmarks stores a lightweight binding key based on the field's visible context and still falls back only to an unambiguous node-type/widget match. This improves resilience without depending on fragile hidden graph internals.
 
 ## Language
 
@@ -133,7 +137,15 @@ After a successful execution, Prompt Bookmarks can read ComfyUI history, reconst
 
 Media files are **not copied** into the plugin database. Prompt Bookmarks stores references to existing ComfyUI output files.
 
-Common image outputs are supported, plus MP4, WebM, MOV, MKV, and M4V when the output exposes ComfyUI-style file metadata.
+Common image outputs are supported, plus MP4, WebM, MOV, MKV, and M4V when the output exposes ComfyUI-style file metadata. Video sources are loaded lazily near the visible sidebar area, and muted autoplay can be enabled from settings.
+
+## JSON backup
+
+The sidebar settings include **Export JSON** and **Import JSON**.
+
+The backup contains workflows, prompt-field bindings, groups, prompt sets, usage metadata, and media references. It does **not** copy generated image/video files.
+
+Import is merge-style: matching bookmark IDs are updated, while unrelated existing bookmarks remain in place. This makes the JSON file suitable for manual backups or moving a personal prompt library between ComfyUI installations without replacing the SQLite database directly.
 
 ## Data location
 
@@ -143,7 +155,7 @@ Your prompt library is stored outside the custom-node repository:
 <ComfyUI user directory>/prompt_bookmarks/prompt_bookmarks.db
 ```
 
-Updating, replacing, or reinstalling this repository does not remove your saved prompts.
+Updating, replacing, or reinstalling this repository does not remove your saved prompts. Database schema upgrades are applied automatically by the extension.
 
 ## Compatibility notes
 
