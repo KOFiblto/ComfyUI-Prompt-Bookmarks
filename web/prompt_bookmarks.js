@@ -59,6 +59,8 @@ const I18N = {
     copy: "复制",
     delete: "删除",
     deleteConfirm: "删除“{name}”？生成文件不会被删除。",
+    deleteGroupConfirm: "删除空分组“{name}”？",
+    groupDeleted: "分组已删除",
     promptApplied: "提示词已应用",
     appliedDetail: "已更新 {applied} 个字段{missing}",
     missingSuffix: "，{count} 个字段未找到",
@@ -119,6 +121,8 @@ const I18N = {
     copy: "Copy",
     delete: "Delete",
     deleteConfirm: "Delete “{name}”? Generated files will not be deleted.",
+    deleteGroupConfirm: "Delete empty group “{name}”?",
+    groupDeleted: "Group deleted",
     promptApplied: "Prompt applied",
     appliedDetail: "{applied} fields updated{missing}",
     missingSuffix: ", {count} missing",
@@ -163,11 +167,9 @@ function t(key, vars = {}) {
 }
 function refreshExtensionLabels() {
   const settings = app.extensionManager?.setting?.settings;
-  const category = t("title");
   const langSetting = settings?.[LANG_SETTING];
   if (langSetting) {
     langSetting.name = t("language");
-    langSetting.category = [category];
     langSetting.options = [
       { value: "auto", text: t("languageAuto") },
       { value: "zh-CN", text: t("languageZh") },
@@ -177,7 +179,6 @@ function refreshExtensionLabels() {
   const autoLinkSetting = settings?.[AUTOLINK_SETTING];
   if (autoLinkSetting) {
     autoLinkSetting.name = t("autoLink");
-    autoLinkSetting.category = [category];
   }
   const tab = app.extensionManager?.getSidebarTabs?.().find((item) => item.id === "prompt-bookmarks");
   if (tab) {
@@ -195,7 +196,7 @@ function injectStyles() {
     .pb-head{padding:12px;border-bottom:1px solid var(--border-color);display:flex;flex-direction:column;gap:8px}
     .pb-row{display:flex;align-items:center;gap:6px}.pb-title{font-size:15px;font-weight:650;flex:1}.pb-wf{font-size:12px;color:var(--descrip-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .pb-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px}.pb-btn,.pb-tab,.pb-chip{border:1px solid var(--border-color);background:var(--comfy-input-bg);color:var(--fg-color);border-radius:6px;padding:6px 8px;cursor:pointer;font:inherit}.pb-btn:disabled{opacity:.4;cursor:not-allowed}.pb-tab.active,.pb-chip.active{background:var(--comfy-menu-secondary-bg)}
-    .pb-search,.pb-input,.pb-select{width:100%;box-sizing:border-box;border:1px solid var(--border-color);background:var(--comfy-input-bg);color:var(--input-text);border-radius:6px;padding:8px;outline:none}.pb-groups{display:flex;gap:5px;overflow-x:auto}.pb-chip{white-space:nowrap;border-radius:999px;padding:4px 8px;font-size:12px}
+    .pb-search,.pb-input,.pb-select{width:100%;box-sizing:border-box;border:1px solid var(--border-color);background:var(--comfy-input-bg);color:var(--input-text);border-radius:6px;padding:8px;outline:none}.pb-groups{display:flex;gap:5px;overflow-x:auto}.pb-chip{white-space:nowrap;border-radius:999px;padding:4px 8px;font-size:12px}.pb-group-wrap{display:inline-flex;align-items:center;flex:0 0 auto}.pb-group-wrap .pb-chip{border-radius:999px 0 0 999px}.pb-group-delete{border-left:0!important;border-radius:0 999px 999px 0!important;padding:4px 7px!important;font-size:12px!important;color:#ff7777}
     .pb-body{flex:1;overflow:auto;padding:10px}.pb-empty{color:var(--descrip-text);text-align:center;padding:28px 12px;line-height:1.6}.pb-empty .pb-btn{margin-top:10px}
     .pb-card{border:1px solid var(--border-color);border-radius:9px;overflow:hidden;margin-bottom:10px;background:var(--comfy-input-bg)}.pb-media{width:100%;aspect-ratio:16/9;display:block;object-fit:cover;background:#111}.pb-cardbody{padding:9px;display:flex;flex-direction:column;gap:6px}.pb-cardtitle{font-size:14px;font-weight:650}.pb-meta{display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--descrip-text)}.pb-badge{border:1px solid var(--border-color);border-radius:5px;padding:1px 5px}.pb-snippet{font-size:12px;line-height:1.45;color:var(--descrip-text);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;word-break:break-word}.pb-actions{display:flex;gap:5px}.pb-actions .pb-btn{flex:1;padding:5px 6px}.pb-danger{color:#ff7777}
     .pb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.52);display:flex;align-items:center;justify-content:center;z-index:100000;padding:18px}.pb-dialog{width:min(680px,95vw);max-height:88vh;display:flex;flex-direction:column;background:var(--comfy-menu-bg);border:1px solid var(--border-color);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.45);color:var(--fg-color)}.pb-dialog-head,.pb-dialog-foot{padding:14px;display:flex;align-items:center;gap:8px}.pb-dialog-head{border-bottom:1px solid var(--border-color)}.pb-dialog-title{font-size:16px;font-weight:700;flex:1}.pb-dialog-body{padding:14px;overflow:auto;display:flex;flex-direction:column;gap:12px}.pb-dialog-foot{border-top:1px solid var(--border-color);justify-content:flex-end}.pb-help{font-size:12px;line-height:1.5;color:var(--descrip-text)}
@@ -493,6 +494,14 @@ function renderCard(prompt) {
   const apply = button(t("apply"), () => applyPrompt(prompt)); apply.disabled = !state.workflow || prompt.workflow_id !== state.workflow.id;
   actions.append(apply, button(t("copy"), () => copyPrompt(prompt)), button(t("delete"), () => deletePrompt(prompt), "pb-danger")); body.appendChild(actions); card.appendChild(body); return card;
 }
+async function deleteGroup(group) {
+  if (Number(group?.prompt_count || 0) !== 0) return;
+  if (!window.confirm(t("deleteGroupConfirm", { name: group.name }))) return;
+  await request(`/groups/${encodeURIComponent(group.id)}`, { method: "DELETE" });
+  if (state.groupId === group.id) state.groupId = null;
+  await loadData();
+  notify("success", t("groupDeleted"), group.name);
+}
 function renderGroupFilters(head) {
   const groups = document.createElement("div"); groups.className = "pb-groups";
   if (state.allMode) {
@@ -500,7 +509,18 @@ function renderGroupFilters(head) {
     for (const name of state.allGroups) groups.appendChild(button(name, async () => { state.allGroupName = name; await loadPrompts(); }, `pb-chip ${state.allGroupName === name ? "active" : ""}`));
   } else if (state.workflow) {
     groups.appendChild(button(t("all"), async () => { state.groupId = null; await loadPrompts(); }, `pb-chip ${state.groupId == null ? "active" : ""}`));
-    for (const g of state.groups || []) groups.appendChild(button(g.name, async () => { state.groupId = g.id; await loadPrompts(); }, `pb-chip ${state.groupId === g.id ? "active" : ""}`));
+    for (const g of state.groups || []) {
+      if (Number(g.prompt_count || 0) === 0) {
+        const wrap = document.createElement("div"); wrap.className = "pb-group-wrap";
+        wrap.append(
+          button(g.name, async () => { state.groupId = g.id; await loadPrompts(); }, `pb-chip ${state.groupId === g.id ? "active" : ""}`),
+          button("×", () => deleteGroup(g), "pb-group-delete"),
+        );
+        groups.appendChild(wrap);
+      } else {
+        groups.appendChild(button(g.name, async () => { state.groupId = g.id; await loadPrompts(); }, `pb-chip ${state.groupId === g.id ? "active" : ""}`));
+      }
+    }
   }
   if (groups.childElementCount) head.appendChild(groups);
 }
@@ -595,7 +615,6 @@ app.registerExtension({
     {
       id: LANG_SETTING,
       name: "Language",
-      category: ["Prompt Bookmarks"],
       type: "combo",
       options: [{ value: "auto", text: "Auto" }, { value: "zh-CN", text: "简体中文" }, { value: "en-US", text: "English" }],
       defaultValue: "auto",
@@ -604,7 +623,6 @@ app.registerExtension({
     {
       id: AUTOLINK_SETTING,
       name: "Automatically link generated media",
-      category: ["Prompt Bookmarks"],
       type: "boolean",
       defaultValue: true,
     },

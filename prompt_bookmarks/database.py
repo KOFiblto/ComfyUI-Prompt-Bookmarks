@@ -221,6 +221,15 @@ class PromptBookmarksDB:
 
     def delete_group(self, group_id: int) -> bool:
         with self._lock, self._conn() as conn:
+            row = conn.execute("SELECT id FROM groups WHERE id=?", (group_id,)).fetchone()
+            if row is None:
+                return False
+            prompt_count = conn.execute(
+                "SELECT COUNT(*) AS n FROM prompts WHERE group_id=?",
+                (group_id,),
+            ).fetchone()["n"]
+            if prompt_count:
+                raise ValueError("Group is not empty")
             cur = conn.execute("DELETE FROM groups WHERE id=?", (group_id,))
             return cur.rowcount > 0
 
