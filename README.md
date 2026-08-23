@@ -1,111 +1,169 @@
 # ComfyUI Prompt Bookmarks
 
-A lightweight, workflow-aware prompt library for ComfyUI. Prompt Bookmarks lives entirely in the **ComfyUI sidebar** and does not add inference nodes to your workflows.
+<p align="center">
+  <strong>A lightweight, dependency-free personal prompt organizer for ComfyUI.</strong><br>
+  Bookmark, group, search, copy, and restore prompts directly from the sidebar — without adding nodes or cluttering your canvas.
+</p>
+
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a>
+</p>
+
+<p align="center">
+  <img alt="ComfyUI" src="https://img.shields.io/badge/ComfyUI-sidebar%20extension-5b5bd6">
+  <img alt="Extra dependencies" src="https://img.shields.io/badge/extra%20dependencies-none-2ea44f">
+  <img alt="Workflow nodes" src="https://img.shields.io/badge/workflow%20nodes-none-2ea44f">
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
+</p>
+
+## Why Prompt Bookmarks?
+
+ComfyUI makes it easy to experiment with prompts, but good prompts often end up scattered across workflow files, text notes, chat history, or copy-paste snippets.
+
+**ComfyUI Prompt Bookmarks** is a small sidebar extension focused on one job: **organizing your own reusable prompts inside ComfyUI**.
+
+- **Lightweight** — no framework runtime and no heavy service layer.
+- **No extra dependencies** — no additional Python packages to install; the backend uses the Python standard library, including `sqlite3`.
+- **No extra workflow nodes** — it does not add loader/saver nodes to your graph.
+- **No canvas clutter** — everything lives in the ComfyUI sidebar.
+- **Personal-first** — designed as a private prompt library/bookmark manager, not a marketplace or cloud service.
+- **Workflow-aware** — remember which prompt fields belong to each workflow and restore them with one click.
+
+If you are searching for a **ComfyUI prompt manager**, **prompt library**, **prompt organizer**, or **prompt bookmark sidebar**, this project is intentionally built to stay simple and out of the way.
 
 ## Features
 
-- Sidebar-first UI; no extra workflow nodes
-- **English and Simplified Chinese UI** with Auto / 中文 / English language selection
-- Detects the active ComfyUI workflow by workflow UUID
-- **Visual prompt-field picker**: select editable text fields with checkboxes; users never need to enter node IDs
-- Automatically recommends likely prompt/text fields and filters common path/filename fields
-- Shows current field content and provides a **Locate** button to jump to the corresponding node on the canvas
-- Supports normal ComfyUI groups transparently and displays the group path in the picker
-- Works with editable widgets exposed by group nodes/subgraphs; hidden internal subgraph fields are intentionally not modified in v0.1
-- Save multiple fields together (for example main prompt + motion prompt + negative prompt)
-- Organize prompts by workflow and group
+- Sidebar-first prompt library with **no added workflow nodes**
+- English and Simplified Chinese UI
+- Automatically follows the active workflow, including workflows whose template UUIDs collide
+- Visual prompt-field picker — select fields with checkboxes; **no node IDs need to be entered manually**
+- Smart prompt/text field recommendations while keeping Note/Markdown fields unchecked by default
+- **Locate** action to jump to the source node on the canvas
+- Normal ComfyUI group path display
+- Supports editable text widgets exposed by Group Nodes / Subgraphs
+- Save multiple fields as one bookmark, such as:
+  - main prompt
+  - motion/camera prompt
+  - negative prompt
+- Organize prompts by **workflow + group**
+- Delete empty groups safely
 - Search saved prompts
-- One-click apply to the current workflow
-- Copy prompts from any workflow to the clipboard
+- One-click restore/apply inside the matching workflow
+- Copy prompts from any workflow, with a clipboard fallback for non-secure/local HTTP environments
 - SQLite persistence under the ComfyUI user directory
 - Best-effort automatic image/video preview linking after successful executions
-- Media references point to existing ComfyUI outputs; Prompt Bookmarks does **not** duplicate generated files
+- Generated media is referenced, **not duplicated**
 
 ## Installation
+
+### ComfyUI Manager
+
+The project includes Comfy Registry metadata and is being prepared for ComfyUI Manager discovery. Once listed, search for:
+
+```text
+ComfyUI Prompt Bookmarks
+```
+
+or:
+
+```text
+Prompt Bookmarks
+```
+
+### Manual installation
 
 ```bash
 cd /path/to/ComfyUI/custom_nodes
 git clone https://github.com/vdeng-ai/ComfyUI-Prompt-Bookmarks.git
 ```
 
-Restart ComfyUI and refresh the browser. A **Prompt Bookmarks / 提示词收藏** bookmark icon should appear in the sidebar.
+Restart ComfyUI and refresh the browser. A bookmark icon will appear in the sidebar.
 
-No additional Python package installation is required. The backend uses Python's built-in `sqlite3` module.
+**No `pip install`, `requirements.txt`, Node.js package install, or build step is required for normal use.**
 
-## First use
+## Quick start
 
 1. Open a workflow in ComfyUI.
-2. Open **Prompt Bookmarks / 提示词收藏** from the sidebar.
-3. Click **Choose Prompt Fields / 选择提示词字段**.
-4. Prompt Bookmarks automatically scans editable string widgets and recommends likely prompt fields.
-5. Tick the fields that should be saved/restored together. Use **Locate / 定位** to jump to a field's node on the canvas if needed.
-6. Click **Save Current Prompt / 收藏当前提示词**.
-7. Enter a bookmark name and an optional group.
-8. Later, click **Apply / 应用** to restore all selected fields at once.
+2. Open **Prompt Bookmarks** from the sidebar.
+3. Click **Choose Prompt Fields**.
+4. Confirm the editable text fields you want to save together.
+5. Click **Save Current Prompt**.
+6. Give it a name and optional group.
+7. Later, click **Apply** to restore those fields or **Copy** to reuse the text elsewhere.
 
-You never need to know or enter ComfyUI node IDs. Node IDs and widget names are stored internally only so Prompt Bookmarks can safely find the selected fields again.
+Prompt Bookmarks stores node IDs and widget names internally only so it can find the selected fields again. You never need to manage those identifiers yourself.
 
-## Groups, group nodes, and subgraphs
+## What it does not do
 
-Prompt Bookmarks v0.1 intentionally follows a conservative compatibility rule:
+Prompt Bookmarks intentionally stays small. It does **not** try to become a workflow manager, model manager, prompt marketplace, cloud sync service, or AI prompt rewriting tool.
 
-- **Normal canvas groups**: fully transparent. The picker shows the group path, for example `Video Generation › Character Prompt › text`.
-- **Group nodes / subgraphs with exposed text widgets**: supported through the text widgets visible and editable on the outer node.
-- **Hidden internal subgraph widgets**: not modified directly in v0.1. Expose the desired prompt field on the outer node first.
+It also does not save sampler/model/seed/CFG settings as part of a prompt bookmark. The focus is your **prompt text library**.
 
-This avoids storing fragile internal graph paths while ComfyUI's subgraph APIs continue to evolve.
+## Groups, Group Nodes, and Subgraphs
+
+Prompt Bookmarks follows a conservative compatibility rule:
+
+- **Normal canvas groups** — fully transparent. The picker shows group paths such as `Video Generation › Character Prompt › text`.
+- **Group Nodes / Subgraphs with exposed text widgets** — supported through the widgets visible on the outer node.
+- **Hidden internal Subgraph widgets** — not modified directly. Expose the desired field first.
+
+This avoids fragile deep graph bindings and keeps the extension compatible with changing ComfyUI frontend internals.
 
 ## Language
 
-Open the gear icon in the sidebar and choose:
+Use the sidebar gear menu or the PromptBookmarks section in ComfyUI Application Settings:
 
-- **Auto / 自动** — follows the current ComfyUI/browser language when possible
+- **Auto** — follows the ComfyUI/browser language when possible
 - **简体中文**
 - **English**
 
-The same language preference is also available in ComfyUI Settings as **Prompt Bookmarks: Language / 语言**.
-
 ## Automatic previews
 
-When an execution completes, Prompt Bookmarks reads ComfyUI's `/history/{prompt_id}` result, reconstructs the saved selected fields, and matches them to saved prompt fingerprints. Matching output media are recorded as references in the Prompt Bookmarks database.
+After a successful execution, Prompt Bookmarks can read ComfyUI history, reconstruct the configured prompt fields, match them against saved prompt fingerprints, and associate matching generated media with the bookmark.
 
-The history endpoint can briefly lag behind the `execution_success` event, so the frontend retries for a short period before giving up. This is intentionally non-blocking and does not affect generation.
+Media files are **not copied** into the plugin database. Prompt Bookmarks stores references to existing ComfyUI output files.
 
-Supported preview detection currently includes common image files plus MP4, WebM, MOV, MKV, and M4V video outputs when those outputs expose ComfyUI-style `{filename, subfolder, type}` metadata.
+Common image outputs are supported, plus MP4, WebM, MOV, MKV, and M4V when the output exposes ComfyUI-style file metadata.
 
 ## Data location
 
-The database is stored under the active ComfyUI user directory:
+Your prompt library is stored outside the custom-node repository:
 
 ```text
 <ComfyUI user directory>/prompt_bookmarks/prompt_bookmarks.db
 ```
 
-Deleting or updating the custom node repository does not remove your saved prompts.
+Updating, replacing, or reinstalling this repository does not remove your saved prompts.
 
-## Current limitations (0.1.x)
+## Compatibility notes
 
-- Prompt field discovery currently operates on editable widgets visible to the active/root canvas. Hidden internal subgraph fields must be exposed first.
-- Cross-workflow **Apply** is disabled by design. Cross-workflow **Copy** is supported.
-- Prompt media are references to files in ComfyUI output storage; if those files are deleted, the preview becomes unavailable.
-- If two saved entries in the same workflow have identical selected-field content, a matching execution can be associated with both entries.
-- Automatic field detection is heuristic; the user always confirms selected fields before anything is stored.
+- Prompt discovery works with editable string widgets visible on the active/root canvas.
+- Hidden internal Subgraph fields must be exposed first.
+- Cross-workflow **Copy** is supported.
+- Cross-workflow **Apply** is disabled by design to avoid writing to unrelated node layouts.
+- Automatic media association is best-effort and never blocks generation.
 
 ## Development
 
-Run the dependency-free backend unit tests:
+Backend tests require no third-party packages:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-Check frontend syntax:
+Frontend syntax check:
 
 ```bash
 node --check web/prompt_bookmarks.js
 ```
 
 See [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) for the implementation roadmap.
+
+## Comfy Registry / Manager metadata
+
+Registry metadata lives in [`pyproject.toml`](pyproject.toml). The repository also includes a manual GitHub Actions workflow for publishing a tagged/versioned release to the Comfy Registry after a maintainer configures `REGISTRY_ACCESS_TOKEN`.
+
+ComfyUI Manager supports both its node database and the official Comfy Registry during the ongoing transition. See the official Manager documentation for current publishing/discovery behavior.
 
 ## License
 
