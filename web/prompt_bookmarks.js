@@ -289,6 +289,7 @@ function promptCandidates() {
       out.push({
         node_id: String(node.id), node_type: type, widget_name: name, label: `${title} · ${name}`,
         display_path: displayPath, group_path: groupPath, preview: String(widget.value || ""),
+        note_like: isNote,
         recommended: !isNote && (likely.test(name) || likely.test(title)),
       });
     }
@@ -323,7 +324,7 @@ async function configureBindings() {
   if (!candidates.length) return notify("warn", t("noTextWidgets"), t("noTextWidgetsDetail"));
   const existing = new Set(state.bindings.map((b) => `${b.node_id}::${b.widget_name}`));
   const usableExisting = candidates.some((c) => existing.has(`${c.node_id}::${c.widget_name}`));
-  const selected = new Set(candidates.filter((c) => existing.has(`${c.node_id}::${c.widget_name}`) || (!usableExisting && c.recommended)).map((c) => `${c.node_id}::${c.widget_name}`));
+  const selected = new Set(candidates.filter((c) => !c.note_like && (existing.has(`${c.node_id}::${c.widget_name}`) || (!usableExisting && c.recommended))).map((c) => `${c.node_id}::${c.widget_name}`));
   const dlg = openDialog(t("configureTitle"));
   const help = document.createElement("div"); help.className = "pb-help"; help.textContent = t("configureDesc"); dlg.body.appendChild(help);
   const note = document.createElement("div"); note.className = "pb-help"; note.textContent = t("exposedOnly"); dlg.body.appendChild(note);
