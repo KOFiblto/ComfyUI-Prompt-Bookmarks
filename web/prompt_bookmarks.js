@@ -61,12 +61,17 @@ const I18N = {
     deleteConfirm: "删除“{name}”？生成文件不会被删除。",
     deleteGroupConfirm: "删除空分组“{name}”？",
     groupDeleted: "分组已删除",
+    renameGroup: "重命名分组",
+    renameGroupPrompt: "输入新的分组名称：",
+    groupRenamed: "分组已重命名",
+    groupNameExists: "已存在同名分组",
     promptApplied: "提示词已应用",
     appliedDetail: "已更新 {applied} 个字段{missing}",
     missingSuffix: "，{count} 个字段未找到",
     copied: "已复制",
     copyFailed: "复制失败",
     mediaCount: "{count} 个预览",
+    previewUnavailable: "预览文件已失效",
     workflow: "工作流",
     openWorkflow: "打开一个工作流后即可使用提示词收藏。",
     noBindings: "还没有选择这个工作流需要收藏的提示词字段。",
@@ -123,12 +128,17 @@ const I18N = {
     deleteConfirm: "Delete “{name}”? Generated files will not be deleted.",
     deleteGroupConfirm: "Delete empty group “{name}”?",
     groupDeleted: "Group deleted",
+    renameGroup: "Rename group",
+    renameGroupPrompt: "Enter a new group name:",
+    groupRenamed: "Group renamed",
+    groupNameExists: "A group with this name already exists",
     promptApplied: "Prompt applied",
     appliedDetail: "{applied} fields updated{missing}",
     missingSuffix: ", {count} missing",
     copied: "Copied",
     copyFailed: "Copy failed",
     mediaCount: "{count} previews",
+    previewUnavailable: "Preview file is no longer available",
     workflow: "Workflow",
     openWorkflow: "Open a workflow to start using Prompt Bookmarks.",
     noBindings: "No prompt fields are selected for this workflow yet.",
@@ -196,9 +206,9 @@ function injectStyles() {
     .pb-head{padding:12px;border-bottom:1px solid var(--border-color);display:flex;flex-direction:column;gap:8px}
     .pb-row{display:flex;align-items:center;gap:6px}.pb-title{font-size:15px;font-weight:650;flex:1}.pb-wf{font-size:12px;color:var(--descrip-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .pb-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px}.pb-btn,.pb-tab,.pb-chip{border:1px solid var(--border-color);background:var(--comfy-input-bg);color:var(--fg-color);border-radius:6px;padding:6px 8px;cursor:pointer;font:inherit}.pb-btn:disabled{opacity:.4;cursor:not-allowed}.pb-tab.active,.pb-chip.active{background:var(--comfy-menu-secondary-bg)}
-    .pb-search,.pb-input,.pb-select{width:100%;box-sizing:border-box;border:1px solid var(--border-color);background:var(--comfy-input-bg);color:var(--input-text);border-radius:6px;padding:8px;outline:none}.pb-groups{display:flex;gap:5px;overflow-x:auto}.pb-chip{white-space:nowrap;border-radius:999px;padding:4px 8px;font-size:12px}.pb-group-wrap{display:inline-flex;align-items:center;flex:0 0 auto}.pb-group-wrap .pb-chip{border-radius:999px 0 0 999px}.pb-group-delete{border-left:0!important;border-radius:0 999px 999px 0!important;padding:4px 7px!important;font-size:12px!important;color:#ff7777}
+    .pb-search,.pb-input,.pb-select{width:100%;box-sizing:border-box;border:1px solid var(--border-color);background:var(--comfy-input-bg);color:var(--input-text);border-radius:6px;padding:8px;outline:none}.pb-groups{display:flex;gap:5px;overflow-x:auto}.pb-chip{white-space:nowrap;border-radius:999px;padding:4px 8px;font-size:12px}.pb-group-wrap{display:inline-flex;align-items:center;flex:0 0 auto}.pb-group-wrap .pb-chip{border-radius:999px 0 0 999px}.pb-group-delete{border-left:0!important;border-radius:0 999px 999px 0!important;padding:4px 7px!important;font-size:12px!important;color:#ff7777}.pb-group-edit{flex:0 0 auto;padding:4px 7px!important}
     .pb-body{flex:1;overflow:auto;padding:10px}.pb-empty{color:var(--descrip-text);text-align:center;padding:28px 12px;line-height:1.6}.pb-empty .pb-btn{margin-top:10px}
-    .pb-card{border:1px solid var(--border-color);border-radius:9px;overflow:hidden;margin-bottom:10px;background:var(--comfy-input-bg)}.pb-media{width:100%;aspect-ratio:16/9;display:block;object-fit:cover;background:#111}.pb-cardbody{padding:9px;display:flex;flex-direction:column;gap:6px}.pb-cardtitle{font-size:14px;font-weight:650}.pb-meta{display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--descrip-text)}.pb-badge{border:1px solid var(--border-color);border-radius:5px;padding:1px 5px}.pb-snippet{font-size:12px;line-height:1.45;color:var(--descrip-text);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;word-break:break-word}.pb-actions{display:flex;gap:5px}.pb-actions .pb-btn{flex:1;padding:5px 6px}.pb-danger{color:#ff7777}
+    .pb-card{border:1px solid var(--border-color);border-radius:9px;overflow:hidden;margin-bottom:10px;background:var(--comfy-input-bg)}.pb-media{width:100%;aspect-ratio:16/9;display:block;object-fit:cover;background:#111}.pb-media-missing{height:160px;display:flex;align-items:center;justify-content:center;padding:10px;box-sizing:border-box;text-align:center;color:var(--descrip-text);background:#111;font-size:12px}.pb-cardbody{padding:9px;display:flex;flex-direction:column;gap:6px}.pb-cardtitle{font-size:14px;font-weight:650}.pb-meta{display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--descrip-text)}.pb-badge{border:1px solid var(--border-color);border-radius:5px;padding:1px 5px}.pb-snippet{font-size:12px;line-height:1.45;color:var(--descrip-text);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;word-break:break-word}.pb-actions{display:flex;gap:5px}.pb-actions .pb-btn{flex:1;padding:5px 6px}.pb-danger{color:#ff7777}
     .pb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.52);display:flex;align-items:center;justify-content:center;z-index:100000;padding:18px}.pb-dialog{width:min(680px,95vw);max-height:88vh;display:flex;flex-direction:column;background:var(--comfy-menu-bg);border:1px solid var(--border-color);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.45);color:var(--fg-color)}.pb-dialog-head,.pb-dialog-foot{padding:14px;display:flex;align-items:center;gap:8px}.pb-dialog-head{border-bottom:1px solid var(--border-color)}.pb-dialog-title{font-size:16px;font-weight:700;flex:1}.pb-dialog-body{padding:14px;overflow:auto;display:flex;flex-direction:column;gap:12px}.pb-dialog-foot{border-top:1px solid var(--border-color);justify-content:flex-end}.pb-help{font-size:12px;line-height:1.5;color:var(--descrip-text)}
     .pb-candidate{border:1px solid var(--border-color);border-radius:8px;padding:10px;display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:start}.pb-candidate-main{min-width:0}.pb-candidate-title{font-weight:650;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.pb-recommended{font-size:10px;border:1px solid var(--border-color);border-radius:999px;padding:1px 5px;color:var(--descrip-text)}.pb-path{font-size:11px;color:var(--descrip-text);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pb-preview{font-size:12px;color:var(--descrip-text);margin-top:6px;white-space:pre-wrap;word-break:break-word;max-height:62px;overflow:hidden}.pb-label{font-size:12px;color:var(--descrip-text);margin-bottom:5px}.pb-field-preview{border:1px solid var(--border-color);background:var(--comfy-input-bg);border-radius:6px;padding:8px;white-space:pre-wrap;word-break:break-word;max-height:110px;overflow:auto}.pb-section{display:flex;flex-direction:column;gap:6px}.pb-settings-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-color)}
   `;
@@ -264,6 +274,22 @@ function findNode(nodeId) {
   return app.graph?.getNodeById?.(Number.isNaN(Number(nodeId)) ? nodeId : Number(nodeId)) || app.graph?.getNodeById?.(String(nodeId)) || null;
 }
 function nodeTitle(node) { return String(node?.title || node?.type || node?.comfyClass || "Node"); }
+function nodeType(node) { return String(node?.comfyClass || node?.type || node?.constructor?.type || ""); }
+function resolveLiveField(field) {
+  const exactNode = findNode(field.node_id);
+  const exactWidget = exactNode?.widgets?.find?.((widget) => widget?.name === field.widget_name);
+  if (exactWidget) return { node: exactNode, widget: exactWidget, recovered: false };
+  const wantedType = String(field.node_type || "");
+  if (!wantedType || !field.widget_name) return null;
+  const matches = [];
+  for (const node of app.graph?._nodes || []) {
+    if (nodeType(node) !== wantedType) continue;
+    const widget = node?.widgets?.find?.((item) => item?.name === field.widget_name);
+    if (widget) matches.push({ node, widget });
+  }
+  if (matches.length !== 1) return null;
+  return { ...matches[0], recovered: true };
+}
 function rectContains(group, node) {
   const gb = group?._bounding || group?.bounding || null; const pos = node?.pos || [0, 0]; const size = node?.size || [0, 0];
   if (!Array.isArray(gb) || gb.length < 4) return false;
@@ -312,9 +338,9 @@ function locateNode(nodeId) {
 function collectCurrentFields() {
   const fields = [];
   for (const binding of state.bindings) {
-    const node = findNode(binding.node_id); const widget = node?.widgets?.find((w) => w.name === binding.widget_name);
-    if (!widget) continue;
-    fields.push({ node_id: String(binding.node_id), node_type: String(binding.node_type || node.comfyClass || node.type || ""), widget_name: String(binding.widget_name), label: String(binding.label || binding.widget_name), value: widget.value });
+    const target = resolveLiveField(binding);
+    if (!target) continue;
+    fields.push({ node_id: String(binding.node_id), node_type: String(binding.node_type || nodeType(target.node)), widget_name: String(binding.widget_name), label: String(binding.label || binding.widget_name), value: target.widget.value });
   }
   return fields;
 }
@@ -390,9 +416,11 @@ async function saveCurrentPrompt() {
 function applyPrompt(prompt) {
   let applied = 0; const missing = [];
   for (const field of prompt.fields || []) {
-    const node = findNode(field.node_id); const widget = node?.widgets?.find((w) => w.name === field.widget_name);
-    if (!widget) { missing.push(field.label || field.widget_name); continue; }
-    widget.value = field.value; widget.callback?.(field.value, app.canvas, node, widget); node.setDirtyCanvas?.(true, true); applied += 1;
+    const target = resolveLiveField(field);
+    if (!target) { missing.push(field.label || field.widget_name); continue; }
+    target.widget.value = field.value;
+    target.widget.callback?.(field.value, app.canvas, target.node, target.widget);
+    target.node.setDirtyCanvas?.(true, true); applied += 1;
   }
   if (applied) { app.graph?.setDirtyCanvas?.(true, true); request(`/prompts/${encodeURIComponent(prompt.id)}/used`, { method: "POST" }).catch(() => {}); }
   const missingText = missing.length ? t("missingSuffix", { count: missing.length }) : "";
@@ -416,7 +444,9 @@ async function copyPrompt(prompt) {
 }
 async function deletePrompt(prompt) {
   if (!window.confirm(t("deleteConfirm", { name: prompt.name }))) return;
-  await request(`/prompts/${encodeURIComponent(prompt.id)}`, { method: "DELETE" }); await loadPrompts();
+  await request(`/prompts/${encodeURIComponent(prompt.id)}`, { method: "DELETE" });
+  if (state.workflow) state.groups = await request(`/groups?workflow_id=${encodeURIComponent(state.workflow.id)}`) || [];
+  await loadPrompts();
 }
 function mediaUrl(media) { const q = new URLSearchParams({ filename: media.filename || "", subfolder: media.subfolder || "", type: media.type || "output" }); return `/view?${q.toString()}`; }
 function isVideo(media) { return media?.media_type === "video" || /\.(mp4|webm|mov|mkv|m4v)$/i.test(media?.filename || ""); }
@@ -479,6 +509,11 @@ function renderCard(prompt) {
   const card = document.createElement("div"); card.className = "pb-card";
   if (prompt.latest_media) {
     const media = isVideo(prompt.latest_media) ? document.createElement("video") : document.createElement("img"); media.className = "pb-media"; media.src = mediaUrl(prompt.latest_media);
+    media.addEventListener("error", () => {
+      if (!media.isConnected) return;
+      const missing = document.createElement("div"); missing.className = "pb-media-missing"; missing.textContent = t("previewUnavailable");
+      media.replaceWith(missing);
+    }, { once: true });
     if (media.tagName === "VIDEO") { media.controls = true; media.muted = true; media.preload = "metadata"; } else media.loading = "lazy"; card.appendChild(media);
   }
   const body = document.createElement("div"); body.className = "pb-cardbody";
@@ -493,6 +528,21 @@ function renderCard(prompt) {
   const actions = document.createElement("div"); actions.className = "pb-actions";
   const apply = button(t("apply"), () => applyPrompt(prompt)); apply.disabled = !state.workflow || prompt.workflow_id !== state.workflow.id;
   actions.append(apply, button(t("copy"), () => copyPrompt(prompt)), button(t("delete"), () => deletePrompt(prompt), "pb-danger")); body.appendChild(actions); card.appendChild(body); return card;
+}
+async function renameSelectedGroup() {
+  const group = (state.groups || []).find((item) => item.id === state.groupId);
+  if (!group) return;
+  const value = window.prompt(t("renameGroupPrompt"), group.name);
+  if (value == null) return;
+  const cleaned = value.trim();
+  if (!cleaned || cleaned === group.name) return;
+  if ((state.groups || []).some((item) => item.id !== group.id && String(item.name || "").toLowerCase() === cleaned.toLowerCase())) {
+    notify("warn", t("renameGroup"), t("groupNameExists"));
+    return;
+  }
+  await request(`/groups/${encodeURIComponent(group.id)}`, { method: "PUT", body: JSON.stringify({ name: cleaned }) });
+  await loadData();
+  notify("success", t("groupRenamed"), cleaned);
 }
 async function deleteGroup(group) {
   if (Number(group?.prompt_count || 0) !== 0) return;
@@ -520,6 +570,9 @@ function renderGroupFilters(head) {
       } else {
         groups.appendChild(button(g.name, async () => { state.groupId = g.id; await loadPrompts(); }, `pb-chip ${state.groupId === g.id ? "active" : ""}`));
       }
+    }
+    if (state.groupId != null) {
+      const edit = button("✎", renameSelectedGroup, "pb-chip pb-group-edit"); edit.title = t("renameGroup"); groups.appendChild(edit);
     }
   }
   if (groups.childElementCount) head.appendChild(groups);
@@ -586,15 +639,23 @@ function unwrapPromptValue(value) {
   if (value && typeof value === "object" && !Array.isArray(value) && Object.prototype.hasOwnProperty.call(value, "__value__")) return value.__value__;
   return value;
 }
+function snapshotNodeForBinding(workflow, binding) {
+  const exact = workflow?.nodes?.find?.((node) => String(node?.id) === String(binding.node_id));
+  if (exact) return exact;
+  const wantedType = String(binding.node_type || "");
+  if (!wantedType) return null;
+  const matches = (workflow?.nodes || []).filter((node) => String(node?.type || node?.class_type || "") === wantedType);
+  return matches.length === 1 ? matches[0] : null;
+}
 function workflowSnapshotValue(history, binding) {
   const workflow = extractWorkflowSnapshot(history);
-  const workflowNode = workflow?.nodes?.find?.((node) => String(node?.id) === String(binding.node_id));
+  const workflowNode = snapshotNodeForBinding(workflow, binding);
   const values = workflowNode?.widgets_values;
   if (!Array.isArray(values) || !values.length) return { found: false, value: undefined };
 
   let widgetIndex = Number(binding.widget_index ?? -1);
   if (!Number.isInteger(widgetIndex) || widgetIndex < 0 || widgetIndex >= values.length) {
-    const liveNode = findNode(binding.node_id);
+    const liveNode = resolveLiveField(binding)?.node || null;
     const liveIndex = liveNode?.widgets?.findIndex?.((widget) => widget?.name === binding.widget_name) ?? -1;
     if (liveIndex >= 0 && liveIndex < values.length) widgetIndex = liveIndex;
   }
@@ -605,10 +666,22 @@ function workflowSnapshotValue(history, binding) {
   if (!Number.isInteger(widgetIndex) || widgetIndex < 0 || widgetIndex >= values.length) return { found: false, value: undefined };
   return { found: true, value: values[widgetIndex] };
 }
+function historyNodeForBinding(graph, binding) {
+  const exact = graph?.[String(binding.node_id)];
+  if (exact?.inputs && Object.prototype.hasOwnProperty.call(exact.inputs, binding.widget_name)) return exact;
+  const wantedType = String(binding.node_type || "");
+  if (!wantedType) return exact || null;
+  const matches = Object.values(graph || {}).filter((node) =>
+    String(node?.class_type || "") === wantedType
+    && node?.inputs
+    && Object.prototype.hasOwnProperty.call(node.inputs, binding.widget_name)
+  );
+  return matches.length === 1 ? matches[0] : exact || null;
+}
 function fieldsFromHistory(history, bindings) {
   const graph = extractPromptGraph(history); const fields = [];
   for (const b of bindings) {
-    const node = graph?.[String(b.node_id)];
+    const node = historyNodeForBinding(graph, b);
     let found = false; let value;
     if (node?.inputs && Object.prototype.hasOwnProperty.call(node.inputs, b.widget_name)) {
       const input = node.inputs[b.widget_name];
@@ -630,9 +703,9 @@ function addLiveFieldFallback(fields, bindings, workflowId) {
   const keys = new Set(fields.map((field) => `${field.node_id}::${field.widget_name}`));
   for (const b of bindings) {
     const key = `${b.node_id}::${b.widget_name}`; if (keys.has(key)) continue;
-    const node = findNode(b.node_id); const widget = node?.widgets?.find?.((item) => item?.name === b.widget_name);
-    if (!widget) continue;
-    fields.push({ node_id: String(b.node_id), node_type: String(b.node_type || node.comfyClass || node.type || ""), widget_name: String(b.widget_name), label: String(b.label || b.widget_name), value: widget.value });
+    const target = resolveLiveField(b);
+    if (!target) continue;
+    fields.push({ node_id: String(b.node_id), node_type: String(b.node_type || nodeType(target.node)), widget_name: String(b.widget_name), label: String(b.label || b.widget_name), value: target.widget.value });
     keys.add(key);
   }
   return fields;
