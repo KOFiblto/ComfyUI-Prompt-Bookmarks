@@ -70,12 +70,18 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(not_linked, [])
         self.assertEqual(self.db.get_prompt(prompt["id"])["media_count"], 1)
 
-    def test_group_delete_keeps_prompt(self):
+    def test_group_delete_rejects_non_empty_group(self):
         group = self.db.create_group(self.workflow_id, "Character")
         prompt = self.db.create_prompt(self.workflow_id, "Turn around", self.fields(), group["id"])
-        self.assertTrue(self.db.delete_group(group["id"]))
+        with self.assertRaisesRegex(ValueError, "Group is not empty"):
+            self.db.delete_group(group["id"])
         stored = self.db.get_prompt(prompt["id"])
-        self.assertIsNone(stored["group_id"])
+        self.assertEqual(stored["group_id"], group["id"])
+
+    def test_empty_group_can_be_deleted(self):
+        group = self.db.create_group(self.workflow_id, "Character")
+        self.assertTrue(self.db.delete_group(group["id"]))
+        self.assertEqual(self.db.list_groups(self.workflow_id), [])
 
 
 if __name__ == "__main__":
