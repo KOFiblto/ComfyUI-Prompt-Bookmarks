@@ -64,6 +64,14 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(stored["use_count"], 1)
         self.assertIsNotNone(stored["last_used_at"])
 
+    def test_overwrite_prompt_keeps_identity_and_usage(self):
+        prompt = self.db.create_prompt(self.workflow_id, "Turn around", self.fields("old prompt"))
+        self.db.mark_used(prompt["id"])
+        updated = self.db.update_prompt(prompt["id"], fields=self.fields("new prompt"))
+        self.assertEqual(updated["id"], prompt["id"])
+        self.assertEqual(updated["use_count"], 1)
+        self.assertEqual(updated["fields"][0]["value"], "new prompt")
+
     def test_sort_modes(self):
         prompt_b = self.db.create_prompt(self.workflow_id, "Beta", self.fields("beta"))
         self.db.create_prompt(self.workflow_id, "Alpha", self.fields("alpha"))

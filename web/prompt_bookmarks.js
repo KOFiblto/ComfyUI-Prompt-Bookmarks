@@ -58,6 +58,12 @@ const I18N = {
     fieldsToSave: "将收藏以下字段",
     createBookmark: "收藏",
     promptBookmarked: "已收藏提示词",
+    duplicatePromptTitle: "已存在同名收藏",
+    duplicatePromptDetail: "分组“{group}”中已经有“{name}”。请选择覆盖原收藏，或返回修改名称。",
+    overwriteBookmark: "覆盖原收藏",
+    renameBookmark: "修改名称",
+    promptOverwritten: "已覆盖提示词",
+    ungrouped: "未分组",
     apply: "应用",
     copy: "复制",
     delete: "删除",
@@ -138,6 +144,12 @@ const I18N = {
     fieldsToSave: "Fields to save",
     createBookmark: "Save",
     promptBookmarked: "Prompt bookmarked",
+    duplicatePromptTitle: "Bookmark already exists",
+    duplicatePromptDetail: "“{name}” already exists in “{group}”. Choose Overwrite to update it, or go back and change the name.",
+    overwriteBookmark: "Overwrite",
+    renameBookmark: "Change name",
+    promptOverwritten: "Prompt overwritten",
+    ungrouped: "Ungrouped",
     apply: "Apply",
     copy: "Copy",
     delete: "Delete",
@@ -443,6 +455,39 @@ function maybeAutoConfigure() {
   setTimeout(() => { if (state.root && !state.allMode && state.workflow?.id === state.autoPromptedWorkflowKey) configureBindings().catch(console.error); }, 0);
 }
 
+async function findBookmarkConflict(name, groupId) {
+  if (!state.workflow) return null;
+  const params = new URLSearchParams({ workflow_id: state.workflow.id, q: name, limit: "1000", sort: "created" });
+  if (groupId != null) params.set("group_id", String(groupId));
+  const rows = await request(`/prompts?${params.toString()}`) || [];
+  const normalizedName = String(name || "").trim().toLocaleLowerCase();
+  return rows.find((prompt) => {
+    if (String(prompt.name || "").trim().toLocaleLowerCase() !== normalizedName) return false;
+    if (groupId == null) return prompt.group_id == null;
+    return Number(prompt.group_id) === Number(groupId);
+  }) || null;
+}
+
+function showBookmarkConflict({ existing, cleanedName, groupName, groupId, fields, saveDialog, nameInput }) {
+  const dlg = openDialog(t("duplicatePromptTitle"));
+  const detail = document.createElement("div"); detail.className = "pb-help";
+  detail.textContent = t("duplicatePromptDetail", { name: cleanedName, group: groupName || t("ungrouped") });
+  dlg.body.appendChild(detail);
+  dlg.foot.append(
+    button(t("cancel"), () => dlg.overlay.remove()),
+    button(t("renameBookmark"), () => {
+      dlg.overlay.remove(); nameInput.focus(); nameInput.select();
+    }),
+    button(t("overwriteBookmark"), async () => {
+      await request(`/prompts/${encodeURIComponent(existing.id)}`, {
+        method: "PUT",
+        body: JSON.stringify({ name: cleanedName, group_id: groupId, fields }),
+      });
+      dlg.overlay.remove(); saveDialog.overlay.remove(); await loadData(); notify("success", t("promptOverwritten"), cleanedName);
+    }),
+  );
+}
+
 async function saveCurrentPrompt() {
   if (!state.workflow) return;
   const fields = collectCurrentFields();
@@ -465,6 +510,11 @@ async function saveCurrentPrompt() {
       let found = state.groups.find((g) => g.name.toLowerCase() === groupName.toLowerCase());
       if (!found) found = await request("/groups", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, name: groupName }) });
       groupId = found.id;
+    }
+    const existing = await findBookmarkConflict(cleanedName, groupId);
+    if (existing) {
+      showBookmarkConflict({ existing, cleanedName, groupName, groupId, fields, saveDialog: dlg, nameInput: name });
+      return;
     }
     await request("/prompts", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, group_id: groupId, name: cleanedName, fields, notes: "" }) });
     dlg.overlay.remove(); await loadData(); notify("success", t("promptBookmarked"), cleanedName);
