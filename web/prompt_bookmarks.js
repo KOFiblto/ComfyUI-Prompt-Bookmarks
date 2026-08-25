@@ -57,6 +57,12 @@ const I18N = {
     groupPlaceholder: "例如：人物 / 运镜 / 产品",
     fieldsToSave: "将收藏以下字段",
     createBookmark: "收藏",
+    edit: "编辑",
+    editPrompt: "编辑提示词",
+    promptUpdated: "提示词已更新",
+    notes: "备注 (可选)",
+    notesPlaceholder: "添加关于此提示词的备注...",
+    saveChanges: "保存修改",
     promptBookmarked: "已收藏提示词",
     duplicatePromptTitle: "已存在同名收藏",
     duplicatePromptDetail: "分组“{group}”中已经有“{name}”。请选择覆盖原收藏，或返回修改名称。",
@@ -143,6 +149,12 @@ const I18N = {
     groupPlaceholder: "e.g. Character / Camera / Product",
     fieldsToSave: "Fields to save",
     createBookmark: "Save",
+    edit: "Edit",
+    editPrompt: "Edit Prompt",
+    promptUpdated: "Prompt updated",
+    notes: "Notes (optional)",
+    notesPlaceholder: "Add notes about this prompt...",
+    saveChanges: "Save Changes",
     promptBookmarked: "Prompt bookmarked",
     duplicatePromptTitle: "Bookmark already exists",
     duplicatePromptDetail: "“{name}” already exists in “{group}”. Choose Overwrite to update it, or go back and change the name.",
@@ -667,6 +679,91 @@ function showSettings() {
   dlg.foot.append(button(t("close"), () => dlg.overlay.remove()));
 }
 
+
+async function editPrompt(prompt) {
+  const dlg = openDialog(t("editPrompt"));
+  const name = document.createElement("input");
+  name.className = "pb-input";
+  name.value = prompt.name || "";
+
+  const group = document.createElement("input");
+  group.className = "pb-input";
+  group.value = prompt.group_name || "";
+  group.placeholder = t("groupPlaceholder");
+
+  const notes = document.createElement("input");
+  notes.className = "pb-input";
+  notes.value = prompt.notes || "";
+  notes.placeholder = t("notesPlaceholder");
+
+  dlg.body.append(
+    field(t("bookmarkName"), name),
+    field(t("groupOptional"), group),
+    field(t("notes"), notes)
+  );
+
+  const fieldsSection = document.createElement("div");
+  fieldsSection.className = "pb-section";
+  const fieldsLabel = document.createElement("div");
+  fieldsLabel.className = "pb-label";
+  fieldsLabel.textContent = t("fieldsToSave");
+  fieldsSection.appendChild(fieldsLabel);
+
+  const textareas = [];
+  const fields = prompt.fields || [];
+  for (const f of fields) {
+    const wrap = document.createElement("div");
+    wrap.style.display = "flex";
+    wrap.style.flexDirection = "column";
+    wrap.style.gap = "4px";
+    wrap.style.marginBottom = "8px";
+    const lbl = document.createElement("div");
+    lbl.className = "pb-label";
+    lbl.style.fontSize = "11px";
+    lbl.textContent = f.label || f.widget_name;
+    const txt = document.createElement("textarea");
+    txt.className = "pb-input";
+    txt.value = String(f.value ?? "");
+    txt.style.minHeight = "60px";
+    txt.style.resize = "vertical";
+    wrap.append(lbl, txt);
+    fieldsSection.appendChild(wrap);
+    textareas.push({ field: f, textarea: txt });
+  }
+  dlg.body.appendChild(fieldsSection);
+
+  dlg.foot.append(
+    button(t("cancel"), () => dlg.overlay.remove()),
+    button(t("saveChanges"), async () => {
+      const cleanedName = name.value.trim();
+      if (!cleanedName) { name.focus(); return; }
+      const groupName = group.value.trim();
+      let groupId = null;
+      if (groupName) {
+        let found = state.groups.find((g) => g.name.toLowerCase() === groupName.toLowerCase());
+        if (!found) found = await request("/groups", { method: "POST", body: JSON.stringify({ workflow_id: prompt.workflow_id, name: groupName }) });
+        groupId = found.id;
+      }
+      const updatedFields = textareas.map((item) => ({
+        ...item.field,
+        value: item.textarea.value,
+      }));
+      await request(`/prompts/${encodeURIComponent(prompt.id)}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          name: cleanedName,
+          group_id: groupId,
+          fields: updatedFields,
+          notes: notes.value.trim(),
+        }),
+      });
+      dlg.overlay.remove();
+      await loadData();
+      notify("success", t("promptUpdated"), cleanedName);
+    })
+  );
+}
+
 function renderCard(prompt) {
   const card = document.createElement("div"); card.className = "pb-card";
   if (prompt.latest_media) {
@@ -693,7 +790,7 @@ function renderCard(prompt) {
   if (first) { const s = document.createElement("div"); s.className = "pb-snippet"; s.textContent = String(first.value || ""); body.appendChild(s); }
   const actions = document.createElement("div"); actions.className = "pb-actions";
   const apply = button(t("apply"), () => applyPrompt(prompt)); apply.disabled = !state.workflow || prompt.workflow_id !== state.workflow.id;
-  actions.append(apply, button(t("copy"), () => copyPrompt(prompt)), button(t("delete"), () => deletePrompt(prompt), "pb-danger")); body.appendChild(actions); card.appendChild(body); return card;
+  actions.append(apply, button(t("copy"), () => copyPrompt(prompt)), button(t("edit"), () => editPrompt(prompt)), button(t("delete"), () => deletePrompt(prompt), "pb-danger")); body.appendChild(actions); card.appendChild(body); return card;
 }
 async function renameSelectedGroup() {
   const group = (state.groups || []).find((item) => item.id === state.groupId);

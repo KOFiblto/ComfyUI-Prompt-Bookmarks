@@ -424,7 +424,6 @@ class PromptBookmarksDB:
         with self._lock, self._conn() as conn:
             conn.execute(f"UPDATE prompts SET {', '.join(updates)} WHERE id=?", params)
         return self.get_prompt(prompt_id)
-
     def delete_prompt(self, prompt_id: str) -> bool:
         with self._lock, self._conn() as conn:
             cur = conn.execute("DELETE FROM prompts WHERE id=?", (prompt_id,))

@@ -226,6 +226,26 @@ def register_routes() -> None:
             LOGGER.exception("Failed to update prompt")
             return _error("Failed to update prompt", 500)
 
+
+    @routes.put("/prompt-bookmarks/prompts/{prompt_id}")
+    async def prompts_put(request: web.Request) -> web.Response:
+        try:
+            data = await _json(request)
+            prompt_id = request.match_info["prompt_id"]
+            name = _require_text(data, "name")
+            fields = data.get("fields", [])
+            if not isinstance(fields, list):
+                return _error("fields must be an array")
+            group_id = data.get("group_id")
+            notes = str(data.get("notes", ""))
+            updated = get_db().update_prompt(prompt_id, name, fields, group_id, notes)
+            return _ok(updated)
+        except ValueError as exc:
+            return _error(str(exc))
+        except Exception:
+            LOGGER.exception("Failed to update prompt")
+            return _error("Failed to update prompt", 500)
+
     @routes.delete("/prompt-bookmarks/prompts/{prompt_id}")
     async def prompts_delete(request: web.Request) -> web.Response:
         return _ok({"deleted": get_db().delete_prompt(request.match_info["prompt_id"])})
