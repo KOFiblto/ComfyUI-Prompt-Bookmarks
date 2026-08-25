@@ -10,6 +10,15 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from .fingerprint import fingerprint_fields
+from .crypto import (
+    derive_key,
+    encrypt_payload,
+    decrypt_payload,
+    is_encrypted_payload,
+    generate_salt,
+    create_verifier,
+    verify_key,
+)
 
 SCHEMA_VERSION = 2
 BACKUP_FORMAT = "comfyui-prompt-bookmarks"
@@ -25,6 +34,7 @@ class PromptBookmarksDB:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.RLock()
+        self._session_key: bytes | None = None
         self._init_schema()
 
     @contextmanager
@@ -46,12 +56,19 @@ class PromptBookmarksDB:
     def _columns(conn: sqlite3.Connection, table: str) -> set[str]:
         return {str(row["name"]) for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
 
-    def _set_schema_version(self, conn: sqlite3.Connection, version: int) -> None:
+    def _get_meta(self, conn: sqlite3.Connection, key: str, default: str = "") -> str:
+        row = conn.execute("SELECT value FROM meta WHERE key=?", (key,)).fetchone()
+        return str(row["value"]) if row else default
+
+    def _set_meta(self, conn: sqlite3.Connection, key: str, value: str) -> None:
         conn.execute(
-            "INSERT INTO meta(key, value) VALUES('schema_version', ?) "
+            "INSERT INTO meta(key, value) VALUES(?, ?) "
             "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-            (str(version),),
+            (key, str(value)),
         )
+
+    def _set_schema_version(self, conn: sqlite3.Connection, version: int) -> None:
+        self._set_meta(conn, "schema_version", str(version))
 
     def _migrate(self, conn: sqlite3.Connection, current: int) -> None:
         version = current
@@ -311,6 +328,16 @@ class PromptBookmarksDB:
         sql = f"""
             SELECT p.*, g.name AS group_name, w.name AS workflow_name, w.path AS workflow_path,
                    (SELECT COUNT(*) FROM prompt_media pm WHERE pm.prompt_id=p.id) AS media_count,
+                   (SELECT json_group_array(
+                        json_object(
+                            'id', id,
+                            'filename', filename,
+                            'subfolder', subfolder,
+                            'type', type,
+                            'media_type', media_type,
+                            'prompt_execution_id', prompt_execution_id
+                        )
+                    ) FROM prompt_media WHERE prompt_id=p.id) AS media_list_json,
                    (SELECT json_object(
                         'id', pm2.id,
                         'filename', pm2.filename,
@@ -330,10 +357,130 @@ class PromptBookmarksDB:
             rows = conn.execute(sql, params).fetchall()
             return [self._decode_prompt(dict(r)) for r in rows]
 
+    def is_encrypted(self) -> bool:
+        with self._lock, self._conn() as conn:
+            val = self._get_meta(conn, "encryption_enabled", "0")
+            return val == "1"
+
+    def get_encryption_status(self) -> dict[str, Any]:
+        with self._lock, self._conn() as conn:
+            enabled = self._get_meta(conn, "encryption_enabled", "0") == "1"
+            algorithm = self._get_meta(conn, "encryption_algorithm", "AES-256-GCM")
+            salt_hex = self._get_meta(conn, "encryption_salt", "")
+            return {
+                "enabled": enabled,
+                "algorithm": algorithm,
+                "unlocked": bool(self._session_key) or not enabled,
+                "has_salt": bool(salt_hex),
+            }
+
+    def unlock_session(self, password: str) -> bool:
+        with self._lock, self._conn() as conn:
+            if not self.is_encrypted():
+                return True
+            salt_hex = self._get_meta(conn, "encryption_salt", "")
+            verifier = self._get_meta(conn, "encryption_verifier", "")
+            if not salt_hex or not verifier:
+                return False
+            salt = bytes.fromhex(salt_hex)
+            key = derive_key(password, salt)
+            if not verify_key(verifier, key):
+                return False
+            self._session_key = key
+            return True
+
+    def lock_session(self) -> None:
+        self._session_key = None
+
+    def enable_encryption(self, password: str, algorithm: str = "AES-256-GCM") -> dict[str, Any]:
+        if not password or len(password) < 4:
+            raise ValueError("Password must be at least 4 characters long")
+        salt = generate_salt(16)
+        key = derive_key(password, salt)
+        verifier = create_verifier(key)
+
+        with self._lock, self._conn() as conn:
+            if self._get_meta(conn, "encryption_enabled", "0") == "1":
+                raise ValueError("Database is already encrypted")
+            rows = conn.execute("SELECT id, fields_json, notes FROM prompts").fetchall()
+            count = 0
+            for r in rows:
+                p_id = r["id"]
+                f_json = r["fields_json"]
+                n_text = r["notes"] or ""
+                enc_fields = encrypt_payload(f_json, key)
+                enc_notes = encrypt_payload(n_text, key) if n_text else ""
+                conn.execute(
+                    "UPDATE prompts SET fields_json=?, notes=? WHERE id=?",
+                    (enc_fields, enc_notes, p_id),
+                )
+                count += 1
+            self._set_meta(conn, "encryption_enabled", "1")
+            self._set_meta(conn, "encryption_algorithm", algorithm)
+            self._set_meta(conn, "encryption_salt", salt.hex())
+            self._set_meta(conn, "encryption_verifier", verifier)
+            self._session_key = key
+            return {"status": "ok", "encrypted_count": count}
+
+    def disable_encryption(self, password: str) -> dict[str, Any]:
+        with self._lock, self._conn() as conn:
+            if self._get_meta(conn, "encryption_enabled", "0") != "1":
+                return {"status": "ok", "decrypted_count": 0}
+            salt_hex = self._get_meta(conn, "encryption_salt", "")
+            verifier = self._get_meta(conn, "encryption_verifier", "")
+            if not salt_hex or not verifier:
+                raise ValueError("Invalid encryption metadata")
+            salt = bytes.fromhex(salt_hex)
+            key = derive_key(password, salt)
+            if not verify_key(verifier, key):
+                raise ValueError("Incorrect password")
+            rows = conn.execute("SELECT id, fields_json, notes FROM prompts").fetchall()
+            count = 0
+            for r in rows:
+                p_id = r["id"]
+                dec_fields = decrypt_payload(r["fields_json"], key)
+                dec_notes = decrypt_payload(r["notes"] or "", key) if r["notes"] else ""
+                conn.execute(
+                    "UPDATE prompts SET fields_json=?, notes=? WHERE id=?",
+                    (dec_fields, dec_notes, p_id),
+                )
+                count += 1
+            self._set_meta(conn, "encryption_enabled", "0")
+            self._set_meta(conn, "encryption_verifier", "")
+            self._set_meta(conn, "encryption_salt", "")
+            self._session_key = None
+            return {"status": "ok", "decrypted_count": count}
+
     def _decode_prompt(self, row: dict[str, Any]) -> dict[str, Any]:
-        row["fields"] = json.loads(row.pop("fields_json"))
+        raw_fields = row.pop("fields_json")
+        raw_notes = row.get("notes", "")
+        if is_encrypted_payload(raw_fields):
+            if self._session_key:
+                try:
+                    decrypted_fields = decrypt_payload(raw_fields, self._session_key)
+                    row["fields"] = json.loads(decrypted_fields)
+                    if is_encrypted_payload(raw_notes):
+                        row["notes"] = decrypt_payload(raw_notes, self._session_key)
+                    row["is_locked"] = False
+                except Exception:
+                    row["fields"] = [{"label": "Locked", "widget_name": "text", "value": "[🔒 Encrypted]"}]
+                    row["is_locked"] = True
+            else:
+                row["fields"] = [{"label": "Locked", "widget_name": "text", "value": "[🔒 Encrypted - Unlock with password]"}]
+                row["notes"] = "[🔒 Encrypted]"
+                row["is_locked"] = True
+        else:
+            row["fields"] = json.loads(raw_fields)
+            row["is_locked"] = False
+        media_list_raw = row.pop("media_list_json", None)
         latest = row.pop("latest_media_json", None)
-        row["latest_media"] = json.loads(latest) if latest else None
+        if row.get("is_locked"):
+            row["media"] = []
+            row["latest_media"] = None
+            row["media_count"] = 0
+        else:
+            row["media"] = json.loads(media_list_raw) if media_list_raw else []
+            row["latest_media"] = json.loads(latest) if latest else (row["media"][0] if row["media"] else None)
         return row
 
     def get_prompt(self, prompt_id: str) -> dict[str, Any] | None:
@@ -342,6 +489,16 @@ class PromptBookmarksDB:
                 """
                 SELECT p.*, g.name AS group_name, w.name AS workflow_name, w.path AS workflow_path,
                        (SELECT COUNT(*) FROM prompt_media pm WHERE pm.prompt_id=p.id) AS media_count,
+                       (SELECT json_group_array(
+                            json_object(
+                                'id', id,
+                                'filename', filename,
+                                'subfolder', subfolder,
+                                'type', type,
+                                'media_type', media_type,
+                                'prompt_execution_id', prompt_execution_id
+                            )
+                        ) FROM prompt_media WHERE prompt_id=p.id) AS media_list_json,
                        (SELECT json_object(
                             'id', pm2.id,
                             'filename', pm2.filename,
@@ -374,15 +531,23 @@ class PromptBookmarksDB:
             raise ValueError("At least one prompt field is required")
         prompt_id = str(uuid.uuid4())
         now = utc_now()
-        fields_json = json.dumps(fields, ensure_ascii=False, separators=(",", ":"))
         fp = fingerprint_fields(fields)
+        fields_json = json.dumps(fields, ensure_ascii=False, separators=(",", ":"))
+        notes_to_save = notes or ""
+        if self.is_encrypted():
+            if not self._session_key:
+                raise ValueError("Database is encrypted and locked. Please unlock first.")
+            fields_json = encrypt_payload(fields_json, self._session_key)
+            if notes_to_save:
+                notes_to_save = encrypt_payload(notes_to_save, self._session_key)
+
         with self._lock, self._conn() as conn:
             conn.execute(
                 """
                 INSERT INTO prompts(id, workflow_id, group_id, name, fields_json, fingerprint, notes, created_at, updated_at)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (prompt_id, workflow_id, group_id, cleaned, fields_json, fp, notes or "", now, now),
+                (prompt_id, workflow_id, group_id, cleaned, fields_json, fp, notes_to_save, now, now),
             )
         return self.get_prompt(prompt_id) or {}
 
@@ -405,17 +570,28 @@ class PromptBookmarksDB:
         if fields is not None:
             if not fields:
                 raise ValueError("At least one prompt field is required")
+            f_json = json.dumps(fields, ensure_ascii=False, separators=(",", ":"))
+            if self.is_encrypted():
+                if not self._session_key:
+                    raise ValueError("Database is encrypted and locked. Please unlock first.")
+                f_json = encrypt_payload(f_json, self._session_key)
             updates.extend(["fields_json=?", "fingerprint=?"])
             params.extend([
-                json.dumps(fields, ensure_ascii=False, separators=(",", ":")),
+                f_json,
                 fingerprint_fields(fields),
             ])
         if group_id is not ...:
             updates.append("group_id=?")
             params.append(group_id)
         if notes is not None:
+            n_text = notes
+            if self.is_encrypted():
+                if not self._session_key:
+                    raise ValueError("Database is encrypted and locked. Please unlock first.")
+                if n_text:
+                    n_text = encrypt_payload(n_text, self._session_key)
             updates.append("notes=?")
-            params.append(notes)
+            params.append(n_text)
         if not updates:
             return self.get_prompt(prompt_id)
         updates.append("updated_at=?")
@@ -437,6 +613,33 @@ class PromptBookmarksDB:
                 (utc_now(), prompt_id),
             )
 
+    def replace_prompt_media(
+        self,
+        prompt_id: str,
+        media_list: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        if not prompt_id:
+            return []
+        now = utc_now()
+        with self._lock, self._conn() as conn:
+            conn.execute("DELETE FROM prompt_media WHERE prompt_id=?", (prompt_id,))
+            for item in media_list:
+                filename = str(item.get("filename", "")).strip()
+                if not filename:
+                    continue
+                subfolder = str(item.get("subfolder", ""))
+                storage_type = str(item.get("type", "input"))
+                media_type = str(item.get("media_type", "image"))
+                conn.execute(
+                    """
+                    INSERT INTO prompt_media(
+                        prompt_id, prompt_execution_id, filename, subfolder, type, media_type, created_at
+                    ) VALUES(?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (prompt_id, "manual", filename, subfolder, storage_type, media_type, now),
+                )
+        return self.list_media(prompt_id)
+
     def list_media(self, prompt_id: str) -> list[dict[str, Any]]:
         with self._lock, self._conn() as conn:
             rows = conn.execute(
@@ -444,6 +647,28 @@ class PromptBookmarksDB:
                 (prompt_id,),
             ).fetchall()
             return [dict(r) for r in rows]
+
+    def link_media_to_prompt(
+        self,
+        prompt_id: str,
+        filename: str,
+        subfolder: str = "",
+        media_type: str = "image",
+        storage_type: str = "input",
+    ) -> bool:
+        if not prompt_id or not filename:
+            return False
+        now = utc_now()
+        with self._lock, self._conn() as conn:
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO prompt_media(
+                    prompt_id, prompt_execution_id, filename, subfolder, type, media_type, created_at
+                ) VALUES(?, ?, ?, ?, ?, ?, ?)
+                """,
+                (prompt_id, "manual", filename, subfolder, storage_type, media_type, now),
+            )
+            return True
 
     def link_media_by_fields(
         self,

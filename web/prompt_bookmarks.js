@@ -37,6 +37,9 @@ const I18N = {
     search: "搜索提示词...",
     all: "全部",
     saveCurrent: "＋ 收藏当前提示词",
+    manualPrompt: "＋ 新建",
+    manualPromptTitle: "新建提示词",
+    manualPromptDesc: "手动输入提示词内容并收藏",
     configure: "选择提示词字段",
     configureTitle: "选择要收藏的提示词",
     configureDesc: "插件已自动发现当前工作流中可编辑的文本字段。勾选需要一起收藏和恢复的字段即可，不需要填写节点编号。",
@@ -57,6 +60,17 @@ const I18N = {
     groupPlaceholder: "例如：人物 / 运镜 / 产品",
     fieldsToSave: "将收藏以下字段",
     createBookmark: "收藏",
+    edit: "编辑",
+    editPrompt: "编辑提示词",
+    promptUpdated: "提示词已更新",
+    customCover: "自定义封面图 (可选)",
+    uploadCover: "上传封面图...",
+    coverUpdated: "封面已更新",
+    viewFullscreen: "点击全屏查看",
+    notes: "备注 (可选)",
+    notesPlaceholder: "添加关于此提示词的备注...",
+    saveChanges: "保存修改",
+    showAllWidgets: "显示所有控件 (LoRA, 宽高比, 步数等)",
     promptBookmarked: "已收藏提示词",
     duplicatePromptTitle: "已存在同名收藏",
     duplicatePromptDetail: "分组“{group}”中已经有“{name}”。请选择覆盖原收藏，或返回修改名称。",
@@ -86,13 +100,34 @@ const I18N = {
     sortCreated: "最近收藏",
     sortName: "名称",
     sortUsed: "使用次数",
-    backup: "数据备份",
+    backup: "备份与恢复",
     exportBackup: "导出 JSON",
     importBackup: "导入 JSON",
+    exportDb: "导出数据库 (.db)",
+    importDb: "恢复数据库 (.db)",
+    importDbConfirm: "恢复 SQLite 数据库？现有的数据库文件将被覆盖并备份为 .db.bak。",
+    dbImported: "数据库文件已成功恢复",
+    dbLocation: "本地数据库文件: user/prompt_bookmarks/prompt_bookmarks.db",
     backupExported: "备份已导出",
-    backupImported: "备份已导入",
+    backupImported: "备份已成功导入",
     importBackupConfirm: "导入备份？同 ID 的收藏会更新，其他现有数据会保留。",
     invalidBackup: "备份文件无效",
+    encryption: "密码保护与加密",
+    encryptionStatus: "当前状态",
+    statusEncrypted: "🔒 已加密 (AES-256-GCM)",
+    statusUnencrypted: "🔓 未加密 (明文)",
+    enableEncryption: "开启密码加密",
+    disableEncryption: "关闭密码保护 (解密)",
+    unlockDatabase: "输入密码解锁",
+    lockDatabase: "立即锁定",
+    enterPassword: "输入密码",
+    confirmPassword: "确认密码",
+    passwordWarning: "⚠️ 重要提示: 您的密码绝不会保存在磁盘上或上传到任何地方。如果您遗忘了密码，所有已加密的提示词将无法恢复！",
+    passwordMismatch: "两次输入的密码不一致",
+    passwordTooShort: "密码长度至少需 4 位",
+    encryptionEnabledSuccess: "加密成功开启",
+    encryptionDisabledSuccess: "密码保护已关闭，数据已解密",
+    unlockedSuccess: "数据库已成功解锁",
     previewAutoplay: "视频预览自动播放",
     workflow: "工作流",
     openWorkflow: "打开一个工作流后即可使用提示词收藏。",
@@ -105,6 +140,8 @@ const I18N = {
     languageAuto: "跟随 ComfyUI / 浏览器",
     languageZh: "简体中文",
     languageEn: "English",
+    selectAll: "全选",
+    clearAll: "清空",
     autoLink: "自动关联生成结果",
     promptFields: "提示词字段",
     reselect: "重新选择",
@@ -123,6 +160,9 @@ const I18N = {
     search: "Search prompts...",
     all: "All",
     saveCurrent: "＋ Save Current Prompt",
+    manualPrompt: "＋ New",
+    manualPromptTitle: "New Prompt",
+    manualPromptDesc: "Manually enter and bookmark prompt fields",
     configure: "Choose Prompt Fields",
     configureTitle: "Choose Prompt Fields",
     configureDesc: "Prompt Bookmarks found editable text fields in this workflow. Select the fields that should be saved and restored together. You never need to enter node IDs.",
@@ -143,6 +183,17 @@ const I18N = {
     groupPlaceholder: "e.g. Character / Camera / Product",
     fieldsToSave: "Fields to save",
     createBookmark: "Save",
+    edit: "Edit",
+    editPrompt: "Edit Prompt",
+    promptUpdated: "Prompt updated",
+    customCover: "Custom Cover Image (optional)",
+    uploadCover: "Upload Cover Image...",
+    coverUpdated: "Cover image updated",
+    viewFullscreen: "Click to view fullscreen",
+    notes: "Notes (optional)",
+    notesPlaceholder: "Add notes about this prompt...",
+    saveChanges: "Save Changes",
+    showAllWidgets: "Show all widgets (LoRA, aspect ratio, steps, etc.)",
     promptBookmarked: "Prompt bookmarked",
     duplicatePromptTitle: "Bookmark already exists",
     duplicatePromptDetail: "“{name}” already exists in “{group}”. Choose Overwrite to update it, or go back and change the name.",
@@ -172,13 +223,34 @@ const I18N = {
     sortCreated: "Recently saved",
     sortName: "Name",
     sortUsed: "Most used",
-    backup: "Data backup",
+    backup: "Backup & Restore",
     exportBackup: "Export JSON",
     importBackup: "Import JSON",
+    exportDb: "Export Database (.db)",
+    importDb: "Restore Database (.db)",
+    importDbConfirm: "Restore SQLite database? Current database file will be replaced and backed up as .db.bak.",
+    dbImported: "Database file restored successfully",
+    dbLocation: "Local database file: user/prompt_bookmarks/prompt_bookmarks.db",
     backupExported: "Backup exported",
-    backupImported: "Backup imported",
+    backupImported: "Backup imported successfully",
     importBackupConfirm: "Import this backup? Matching bookmark IDs will be updated and other existing data will be kept.",
     invalidBackup: "Invalid backup file",
+    encryption: "Password Protection & Encryption",
+    encryptionStatus: "Current Status",
+    statusEncrypted: "🔒 Encrypted (AES-256-GCM)",
+    statusUnencrypted: "🔓 Unencrypted (Plaintext)",
+    enableEncryption: "Enable Password Encryption",
+    disableEncryption: "Disable Encryption (Decrypt)",
+    unlockDatabase: "Unlock with Password",
+    lockDatabase: "Lock Now",
+    enterPassword: "Enter Password",
+    confirmPassword: "Confirm Password",
+    passwordWarning: "⚠️ Important: Your password is NEVER stored on disk or sent anywhere. If you forget your password, your encrypted prompts cannot be recovered!",
+    passwordMismatch: "Passwords do not match",
+    passwordTooShort: "Password must be at least 4 characters",
+    encryptionEnabledSuccess: "Encryption enabled successfully",
+    encryptionDisabledSuccess: "Encryption disabled and database decrypted",
+    unlockedSuccess: "Database unlocked successfully",
     previewAutoplay: "Autoplay video previews",
     workflow: "Workflow",
     openWorkflow: "Open a workflow to start using Prompt Bookmarks.",
@@ -191,7 +263,9 @@ const I18N = {
     languageAuto: "Follow ComfyUI / browser",
     languageZh: "简体中文",
     languageEn: "English",
-    autoLink: "Automatically link generated media",
+    selectAll: "Select all",
+    clearAll: "Clear all",
+    autoLink: "Auto-link generation results",
     promptFields: "Prompt Fields",
     reselect: "Reselect",
     close: "Close",
@@ -257,10 +331,23 @@ function injectStyles() {
     .pb-head{padding:12px;border-bottom:1px solid var(--border-color);display:flex;flex-direction:column;gap:8px}
     .pb-row{display:flex;align-items:center;gap:6px}.pb-title{font-size:15px;font-weight:650;flex:1}.pb-wf{font-size:12px;color:var(--descrip-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .pb-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px}.pb-btn,.pb-tab,.pb-chip{border:1px solid var(--border-color);background:var(--comfy-input-bg);color:var(--fg-color);border-radius:6px;padding:6px 8px;cursor:pointer;font:inherit}.pb-btn:disabled{opacity:.4;cursor:not-allowed}.pb-tab.active,.pb-chip.active{background:var(--comfy-menu-secondary-bg)}
-    .pb-search,.pb-input,.pb-select{width:100%;box-sizing:border-box;border:1px solid var(--border-color);background:var(--comfy-input-bg);color:var(--input-text);border-radius:6px;padding:8px;outline:none}.pb-groups{display:flex;gap:5px;overflow-x:auto}.pb-chip{white-space:nowrap;border-radius:999px;padding:4px 8px;font-size:12px}.pb-group-wrap{display:inline-flex;align-items:center;flex:0 0 auto}.pb-group-wrap .pb-chip{border-radius:999px 0 0 999px}.pb-group-delete{border-left:0!important;border-radius:0 999px 999px 0!important;padding:4px 7px!important;font-size:12px!important;color:#ff7777}.pb-group-edit{flex:0 0 auto;padding:4px 7px!important}
+    .pb-search,.pb-input,.pb-select{width:100%;box-sizing:border-box;}textarea.pb-input{width:100% !important;box-sizing:border-box !important;resize:none !important;border:1px solid var(--border-color);background:var(--comfy-input-bg);color:var(--input-text);border-radius:6px;padding:8px;outline:none}.pb-groups{display:flex;gap:5px;overflow-x:auto}.pb-chip{white-space:nowrap;border-radius:999px;padding:4px 8px;font-size:12px}.pb-group-wrap{display:inline-flex;align-items:center;flex:0 0 auto}.pb-group-wrap .pb-chip{border-radius:999px 0 0 999px}.pb-group-delete{border-left:0!important;border-radius:0 999px 999px 0!important;padding:4px 7px!important;font-size:12px!important;color:#ff7777}.pb-group-edit{flex:0 0 auto;padding:4px 7px!important}
     .pb-body{flex:1;overflow:auto;padding:10px}.pb-empty{color:var(--descrip-text);text-align:center;padding:28px 12px;line-height:1.6}.pb-empty .pb-btn{margin-top:10px}
     .pb-card{border:1px solid var(--border-color);border-radius:9px;overflow:hidden;margin-bottom:10px;background:var(--comfy-input-bg)}.pb-media{width:100%;aspect-ratio:16/9;display:block;object-fit:cover;background:#111}.pb-media-missing{height:160px;display:flex;align-items:center;justify-content:center;padding:10px;box-sizing:border-box;text-align:center;color:var(--descrip-text);background:#111;font-size:12px}.pb-cardbody{padding:9px;display:flex;flex-direction:column;gap:6px}.pb-cardtitle{font-size:14px;font-weight:650}.pb-meta{display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--descrip-text)}.pb-badge{border:1px solid var(--border-color);border-radius:5px;padding:1px 5px}.pb-snippet{font-size:12px;line-height:1.45;color:var(--descrip-text);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;word-break:break-word}.pb-actions{display:flex;gap:5px}.pb-actions .pb-btn{flex:1;padding:5px 6px}.pb-danger{color:#ff7777}
-    .pb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.52);display:flex;align-items:center;justify-content:center;z-index:100000;padding:18px}.pb-dialog{width:min(680px,95vw);max-height:88vh;display:flex;flex-direction:column;background:var(--comfy-menu-bg);border:1px solid var(--border-color);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.45);color:var(--fg-color)}.pb-dialog-head,.pb-dialog-foot{padding:14px;display:flex;align-items:center;gap:8px}.pb-dialog-head{border-bottom:1px solid var(--border-color)}.pb-dialog-title{font-size:16px;font-weight:700;flex:1}.pb-dialog-body{padding:14px;overflow:auto;display:flex;flex-direction:column;gap:12px}.pb-dialog-foot{border-top:1px solid var(--border-color);justify-content:flex-end}.pb-help{font-size:12px;line-height:1.5;color:var(--descrip-text)}
+    .pb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.52);display:flex;align-items:center;justify-content:center;z-index:100000;padding:18px}.pb-dialog{width:min(680px,95vw);max-height:88vh;display:flex;flex-direction:column;background:var(--comfy-menu-bg);border:1px solid var(--border-color);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.45);color:var(--fg-color);box-sizing:border-box}.pb-dialog-settings{min-width:820px;max-width:920px;width:860px}.pb-dialog-resizable{resize:both;overflow:auto;min-width:680px !important;min-height:520px !important;width:680px;max-width:94vw;max-height:92vh}.pb-dialog-head,.pb-dialog-foot{padding:14px;display:flex;align-items:center;gap:8px}.pb-dialog-head{border-bottom:1px solid var(--border-color)}.pb-dialog-title{font-size:16px;font-weight:700;flex:1}.pb-dialog-body{padding:14px;overflow:auto;display:flex;flex-direction:column;gap:12px;flex:1;height:100%}
+    .pb-section-fields { display: flex !important; flex-direction: column !important; flex: 1 1 auto !important; min-height: 120px !important; }
+    .pb-field-item-wrap { display: flex !important; flex-direction: column !important; flex: 1 1 auto !important; min-height: 90px !important; margin-bottom: 8px; }
+    textarea.pb-field-textarea, .pb-section-fields textarea, .pb-field-item-wrap textarea { width: 100% !important; flex: 1 1 auto !important; height: 100% !important; min-height: 90px !important; box-sizing: border-box !important; resize: none !important; }
+.pb-dialog-foot{border-top:1px solid var(--border-color);justify-content:flex-end}.pb-help{font-size:12px;line-height:1.5;color:var(--descrip-text)}.pb-lightbox-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100005;backdrop-filter:blur(6px);cursor:zoom-out}.pb-lightbox-close{position:absolute;top:18px;right:24px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:22px;border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}.pb-lightbox-close:hover{background:rgba(239,68,68,.8)}
+    .pb-lightbox-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:24px;border-radius:50%;width:46px;height:46px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;user-select:none;z-index:100010}
+    .pb-lightbox-nav:hover{background:rgba(255,255,255,.35);transform:translateY(-50%) scale(1.1)}
+    .pb-lightbox-prev{left:24px}
+    .pb-lightbox-next{right:24px}
+    .pb-lightbox-counter{position:absolute;bottom:24px;background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:13px;font-weight:600;padding:4px 14px;border-radius:999px;user-select:none;z-index:100010}
+    .pb-card-media-strip{display:flex;gap:6px;overflow-x:auto;padding:6px;background:#0d0d0f;border-bottom:1px solid var(--border-color)}
+    .pb-card-media-thumb{width:110px;height:110px;flex:0 0 110px;border-radius:6px;object-fit:cover;cursor:zoom-in;border:1px solid var(--border-color);transition:transform .15s ease,border-color .15s ease}
+    .pb-card-media-thumb:hover{transform:scale(1.03);border-color:#3b82f6}
+.pb-carousel-container{display:flex;gap:10px;overflow-x:auto;padding:6px 2px 10px 2px;align-items:center}.pb-carousel-item{position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--border-color);flex:0 0 auto;background:#111}.pb-carousel-item img,.pb-carousel-item video{width:100%;height:100%;object-fit:cover}.pb-carousel-remove{position:absolute;top:3px;right:3px;background:rgba(239,68,68,.9);border:none;color:#fff;font-size:11px;font-weight:bold;width:20px;height:20px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s}.pb-carousel-remove:hover{transform:scale(1.15)}.pb-carousel-add{width:80px;height:80px;border-radius:8px;border:2px dashed var(--border-color);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--descrip-text);font-size:11px;gap:4px;flex:0 0 auto;transition:all .2s;background:rgba(255,255,255,.03)}.pb-carousel-add:hover{border-color:#10b981;color:#10b981;background:rgba(16,185,129,.08)}
     .pb-candidate{border:1px solid var(--border-color);border-radius:8px;padding:10px;display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:start}.pb-candidate-main{min-width:0}.pb-candidate-title{font-weight:650;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.pb-recommended{font-size:10px;border:1px solid var(--border-color);border-radius:999px;padding:1px 5px;color:var(--descrip-text)}.pb-path{font-size:11px;color:var(--descrip-text);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pb-preview{font-size:12px;color:var(--descrip-text);margin-top:6px;white-space:pre-wrap;word-break:break-word;max-height:62px;overflow:hidden}.pb-label{font-size:12px;color:var(--descrip-text);margin-bottom:5px}.pb-field-preview{border:1px solid var(--border-color);background:var(--comfy-input-bg);border-radius:6px;padding:8px;white-space:pre-wrap;word-break:break-word;max-height:110px;overflow:auto}.pb-section{display:flex;flex-direction:column;gap:6px}.pb-settings-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-color)}
   `;
   document.head.appendChild(style);
@@ -284,9 +371,188 @@ function field(labelText, control) {
   const wrap = document.createElement("div"); wrap.className = "pb-section";
   const label = document.createElement("div"); label.className = "pb-label"; label.textContent = labelText; wrap.append(label, control); return wrap;
 }
-function openDialog(titleText) {
+function openInWindowImageViewer(mediaInput, initialIndex = 0, title = "") {
+  const items = Array.isArray(mediaInput) ? mediaInput : [{ filename: mediaInput }];
+  if (!items.length) return;
+  let currentIndex = Math.max(0, Math.min(initialIndex, items.length - 1));
+
+  const overlay = document.createElement("div");
+  overlay.className = "pb-lightbox-overlay";
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "pb-lightbox-close";
+  closeBtn.textContent = "✕";
+  closeBtn.title = "Close (Esc)";
+  const close = () => { overlay.remove(); document.removeEventListener("keydown", onKey); };
+  closeBtn.onclick = close;
+
+  const contentWrap = document.createElement("div");
+  contentWrap.style.cssText = "display:flex;align-items:center;justify-content:center;max-width:92vw;max-height:88vh;position:relative;";
+  contentWrap.onclick = (e) => e.stopPropagation();
+
+  let prevBtn = null;
+  let nextBtn = null;
+  let counter = null;
+
+  function updateMedia() {
+    contentWrap.innerHTML = "";
+    const item = items[currentIndex];
+    const src = typeof item === "string" ? item : mediaUrl(item);
+    const isVid = isVideo(item) || isVideo({ filename: src });
+
+    const mediaEl = isVid ? document.createElement("video") : document.createElement("img");
+    mediaEl.src = src;
+    mediaEl.style.maxWidth = "92vw";
+    mediaEl.style.maxHeight = "85vh";
+    mediaEl.style.objectFit = "contain";
+    mediaEl.style.borderRadius = "8px";
+    mediaEl.style.boxShadow = "0 8px 32px rgba(0,0,0,0.85)";
+    mediaEl.style.cursor = "default";
+    if (isVid) {
+      mediaEl.controls = true;
+      mediaEl.autoplay = true;
+    }
+    contentWrap.appendChild(mediaEl);
+
+    if (counter) counter.textContent = `${currentIndex + 1} / ${items.length}`;
+  }
+
+  if (items.length > 1) {
+    prevBtn = document.createElement("button");
+    prevBtn.className = "pb-lightbox-nav pb-lightbox-prev";
+    prevBtn.innerHTML = "&#10094;";
+    prevBtn.title = "Previous (Left Arrow)";
+    prevBtn.onclick = (e) => {
+      e.stopPropagation();
+      currentIndex = (currentIndex - 1 + items.length) % items.length;
+      updateMedia();
+    };
+
+    nextBtn = document.createElement("button");
+    nextBtn.className = "pb-lightbox-nav pb-lightbox-next";
+    nextBtn.innerHTML = "&#10095;";
+    nextBtn.title = "Next (Right Arrow)";
+    nextBtn.onclick = (e) => {
+      e.stopPropagation();
+      currentIndex = (currentIndex + 1) % items.length;
+      updateMedia();
+    };
+
+    counter = document.createElement("div");
+    counter.className = "pb-lightbox-counter";
+    overlay.append(prevBtn, nextBtn, counter);
+  }
+
+  const onKey = (e) => {
+    if (e.key === "Escape") close();
+    else if (e.key === "ArrowLeft" && items.length > 1) {
+      currentIndex = (currentIndex - 1 + items.length) % items.length;
+      updateMedia();
+    } else if (e.key === "ArrowRight" && items.length > 1) {
+      currentIndex = (currentIndex + 1) % items.length;
+      updateMedia();
+    }
+  };
+  document.addEventListener("keydown", onKey);
+
+  overlay.append(closeBtn, contentWrap);
+  overlay.onclick = (e) => { if (e.target === overlay) close(); };
+  document.body.appendChild(overlay);
+  updateMedia();
+}
+
+function createMediaCarousel(initialMediaList = []) {
+  const mediaList = [...initialMediaList];
+  const container = document.createElement("div"); container.className = "pb-carousel-container";
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = "image/*,video/*";
+  fileInput.multiple = true;
+  fileInput.style.display = "none";
+
+  function renderItems() {
+    container.innerHTML = "";
+    mediaList.forEach((item, index) => {
+      const tile = document.createElement("div"); tile.className = "pb-carousel-item";
+      const src = mediaUrl(item);
+      const isVid = isVideo(item);
+      const el = isVid ? document.createElement("video") : document.createElement("img");
+      el.src = src;
+      if (isVid) el.muted = true;
+      tile.appendChild(el);
+
+      const delBtn = document.createElement("button");
+      delBtn.className = "pb-carousel-remove";
+      delBtn.textContent = "✕";
+      delBtn.title = "Remove image";
+      delBtn.onclick = (e) => {
+        e.stopPropagation();
+        mediaList.splice(index, 1);
+        renderItems();
+      };
+      tile.appendChild(delBtn);
+      container.appendChild(tile);
+    });
+
+    const addTile = document.createElement("div");
+    addTile.className = "pb-carousel-add";
+    addTile.innerHTML = `<span style="font-size:18px;line-height:1;">＋</span><span>Add</span>`;
+    addTile.onclick = () => fileInput.click();
+    container.append(addTile, fileInput);
+  }
+
+  fileInput.onchange = async () => {
+    const files = Array.from(fileInput.files || []);
+    if (!files.length) return;
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("image", file);
+      try {
+        const resp = await fetch("/upload/image", { method: "POST", body: formData });
+        const res = await resp.json();
+        if (res && res.name) {
+          mediaList.push({
+            filename: res.name,
+            subfolder: res.subfolder || "",
+            type: res.type || "input",
+            media_type: file.type.startsWith("video") ? "video" : "image"
+          });
+        }
+      } catch (err) {
+        notify("error", t("title"), `Upload error: ${err.message}`);
+      }
+    }
+    fileInput.value = "";
+    renderItems();
+  };
+
+  renderItems();
+  return { container, getMediaList: () => mediaList };
+}
+
+function openDialog(titleText, options = {}) {
   const overlay = document.createElement("div"); overlay.className = "pb-overlay";
   const dialog = document.createElement("div"); dialog.className = "pb-dialog";
+  if (options.className) dialog.classList.add(options.className);
+  if (options.resizable) {
+    dialog.classList.add("pb-dialog-resizable");
+    try {
+      const saved = JSON.parse(localStorage.getItem("PromptBookmarks.DialogSize") || "null");
+      if (saved && saved.width && saved.height) {
+        dialog.style.width = `${saved.width}px`;
+        dialog.style.height = `${saved.height}px`;
+      }
+    } catch (_) {}
+
+    new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 280 && height > 280) {
+          localStorage.setItem("PromptBookmarks.DialogSize", JSON.stringify({ width: Math.round(width), height: Math.round(height) }));
+        }
+      }
+    }).observe(dialog);
+  }
   const head = document.createElement("div"); head.className = "pb-dialog-head";
   const title = document.createElement("div"); title.className = "pb-dialog-title"; title.textContent = titleText;
   const x = button("×", () => overlay.remove()); x.style.fontSize = "18px"; head.append(title, x);
@@ -294,7 +560,7 @@ function openDialog(titleText) {
   const foot = document.createElement("div"); foot.className = "pb-dialog-foot";
   dialog.append(head, body, foot); overlay.appendChild(dialog); document.body.appendChild(overlay);
   overlay.addEventListener("mousedown", (event) => { if (event.target === overlay) overlay.remove(); });
-  return { overlay, body, foot };
+  return { overlay, body, foot, dialog };
 }
 
 function activeWorkflowInfo() {
@@ -361,21 +627,28 @@ function resolveLiveField(field) {
   if (matches.length !== 1) return null;
   return { node: matches[0].node, widget: matches[0].widget, recovered: true };
 }
-function promptCandidates() {
+function promptCandidates(includeAllWidgets = false) {
   const out = [];
-  const likely = /(prompt|text|positive|negative|caption|instruction|description|motion|camera|scene|character)/i;
-  const reject = /^(filename|filename_prefix|path|directory|folder|seed|url|model|ckpt|checkpoint)$/i;
+  const likely = /(prompt|text|positive|negative|caption|instruction|description|motion|camera|scene|character|lora|aspect|ratio|steps|cfg|denoise)/i;
+  const reject = includeAllWidgets
+    ? /^(_|control_after_generate|upload)$/i
+    : /^(filename|filename_prefix|path|directory|folder|seed|url|model|ckpt|checkpoint)$/i;
   const noteLike = /(note|notes|markdown|sticky)/i;
   for (const node of app.graph?._nodes || []) {
     for (const widget of node.widgets || []) {
-      if (!widget?.name || typeof widget.value !== "string") continue;
+      if (!widget?.name) continue;
+      const val = widget.value;
+      const isSupportedType = includeAllWidgets
+        ? (typeof val === "string" || typeof val === "number" || typeof val === "boolean")
+        : (typeof val === "string");
+      if (!isSupportedType) continue;
       const name = String(widget.name); if (reject.test(name)) continue;
       const title = nodeTitle(node); const type = nodeType(node);
       const groupPath = groupPathForNode(node); const displayPath = [...groupPath, title, name].join(" › ");
       const isNote = noteLike.test(`${title} ${type}`);
       out.push({
         node_id: String(node.id), node_type: type, widget_name: name, binding_key: bindingKey(node, name), label: `${title} · ${name}`,
-        display_path: displayPath, group_path: groupPath, preview: String(widget.value || ""),
+        display_path: displayPath, group_path: groupPath, preview: String(val ?? ""),
         note_like: isNote,
         recommended: !isNote && (likely.test(name) || likely.test(title)),
       });
@@ -414,9 +687,9 @@ function collectCurrentFields() {
   return fields;
 }
 
-async function configureBindings() {
+async function configureBindings(includeAll = false) {
   if (!state.workflow) return;
-  const candidates = promptCandidates();
+  const candidates = promptCandidates(includeAll);
   if (!candidates.length) return notify("warn", t("noTextWidgets"), t("noTextWidgetsDetail"));
   const existing = new Set(state.bindings.map((b) => `${b.node_id}::${b.widget_name}`));
   const usableExisting = candidates.some((c) => existing.has(`${c.node_id}::${c.widget_name}`));
@@ -424,8 +697,34 @@ async function configureBindings() {
   const dlg = openDialog(t("configureTitle"));
   const help = document.createElement("div"); help.className = "pb-help"; help.textContent = t("configureDesc"); dlg.body.appendChild(help);
   const note = document.createElement("div"); note.className = "pb-help"; note.textContent = t("exposedOnly"); dlg.body.appendChild(note);
-  const count = document.createElement("div"); count.className = "pb-help";
-  const updateCount = () => { count.textContent = t("selectedCount", { count: selected.size }); }; updateCount(); dlg.body.appendChild(count);
+
+  const toggleRow = document.createElement("div"); toggleRow.style.display = "flex"; toggleRow.style.alignItems = "center"; toggleRow.style.gap = "6px"; toggleRow.className = "pb-help";
+  const toggleCheck = document.createElement("input"); toggleCheck.type = "checkbox"; toggleCheck.checked = includeAll;
+  toggleCheck.onchange = () => { dlg.overlay.remove(); configureBindings(toggleCheck.checked); };
+  const toggleLabel = document.createElement("label"); toggleLabel.textContent = t("showAllWidgets"); toggleLabel.style.cursor = "pointer";
+  toggleLabel.onclick = () => { toggleCheck.checked = !toggleCheck.checked; dlg.overlay.remove(); configureBindings(toggleCheck.checked); };
+  toggleRow.append(toggleCheck, toggleLabel);
+  dlg.body.appendChild(toggleRow);
+
+  const countWrap = document.createElement("div"); countWrap.className = "pb-help"; countWrap.style.display = "flex"; countWrap.style.justifyContent = "space-between"; countWrap.style.alignItems = "center";
+  const count = document.createElement("div");
+  const updateCount = () => { count.textContent = t("selectedCount", { count: selected.size }); }; updateCount();
+  const selectActions = document.createElement("div"); selectActions.style.display = "flex"; selectActions.style.gap = "6px";
+  const btnSelectAll = button(t("selectAll"), () => {
+    for (const c of candidates) selected.add(`${c.node_id}::${c.widget_name}`);
+    dlg.body.querySelectorAll(".pb-candidate input[type=checkbox]").forEach((cb) => { cb.checked = true; });
+    updateCount();
+  });
+  btnSelectAll.style.fontSize = "11px"; btnSelectAll.style.padding = "2px 8px";
+  const btnClearAll = button(t("clearAll"), () => {
+    selected.clear();
+    dlg.body.querySelectorAll(".pb-candidate input[type=checkbox]").forEach((cb) => { cb.checked = false; });
+    updateCount();
+  });
+  btnClearAll.style.fontSize = "11px"; btnClearAll.style.padding = "2px 8px";
+  selectActions.append(btnSelectAll, btnClearAll);
+  countWrap.append(count, selectActions);
+  dlg.body.appendChild(countWrap);
   for (const c of candidates) {
     const row = document.createElement("div"); row.className = "pb-candidate";
     const check = document.createElement("input"); check.type = "checkbox"; const key = `${c.node_id}::${c.widget_name}`; check.checked = selected.has(key);
@@ -516,10 +815,245 @@ async function saveCurrentPrompt() {
       showBookmarkConflict({ existing, cleanedName, groupName, groupId, fields, saveDialog: dlg, nameInput: name });
       return;
     }
-    await request("/prompts", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, group_id: groupId, name: cleanedName, fields, notes: "" }) });
+    const created = await request("/prompts", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, group_id: groupId, name: cleanedName, fields, notes: "" }) });
+    if (created && created.id) {
+      await request(`/prompts/${encodeURIComponent(created.id)}/media`, {
+        method: "PUT",
+        body: JSON.stringify({ media: carousel.getMediaList() }),
+      }).catch(console.error);
+    }
     dlg.overlay.remove(); await loadData(); notify("success", t("promptBookmarked"), cleanedName);
   }));
   setTimeout(() => name.focus(), 0);
+}
+
+
+async function openExternalSaveDialog(detail = {}) {
+  if (!state.workflow) {
+    notify("warn", t("title"), t("openWorkflow"));
+    return;
+  }
+  let bindings = state.bindings;
+  if (!bindings || !bindings.length) {
+    bindings = [{
+      node_id: "0",
+      node_type: "CLIPTextEncode",
+      widget_name: "text",
+      binding_key: "prompt",
+      label: "POSITIVE PROMPT · text"
+    }];
+  }
+
+  const dlg = openDialog(t("manualPromptTitle") || "New Bookmark", { resizable: true });
+  const name = document.createElement("input");
+  name.className = "pb-input";
+  name.placeholder = t("bookmarkNamePlaceholder");
+  name.value = detail.name || "";
+
+  const group = document.createElement("input");
+  group.className = "pb-input";
+  group.placeholder = t("groupPlaceholder");
+  group.value = detail.group || "";
+
+  const initialMedia = Array.isArray(detail.media) ? detail.media : (detail.media ? [detail.media] : []);
+  const carousel = createMediaCarousel(initialMedia);
+
+  dlg.body.append(
+    field(t("bookmarkName"), name),
+    field(t("groupOptional"), group),
+    field(t("customCover") || "Images / Media", carousel.container)
+  );
+
+  const fieldsSection = document.createElement("div");
+  fieldsSection.className = "pb-section pb-section-fields";
+  const fieldsLabel = document.createElement("div");
+  fieldsLabel.className = "pb-label";
+  fieldsLabel.textContent = t("fieldsToSave");
+  fieldsSection.appendChild(fieldsLabel);
+
+  const textareas = [];
+  for (let i = 0; i < bindings.length; i++) {
+    const b = bindings[i];
+    const wrap = document.createElement("div");
+    wrap.className = "pb-field-item-wrap";
+    const lbl = document.createElement("div");
+    lbl.className = "pb-label";
+    lbl.style.fontSize = "11px";
+    lbl.textContent = b.label || b.widget_name;
+    const txt = document.createElement("textarea");
+    txt.className = "pb-input pb-field-textarea";
+    txt.placeholder = b.widget_name;
+    if (i === 0 && detail.text) {
+      txt.value = detail.text;
+    }
+    wrap.append(lbl, txt);
+    fieldsSection.appendChild(wrap);
+    textareas.push({ binding: b, textarea: txt });
+  }
+  dlg.body.appendChild(fieldsSection);
+
+  dlg.foot.append(
+    button(t("cancel"), () => dlg.overlay.remove()),
+    button(t("createBookmark"), async () => {
+      const cleanedName = name.value.trim();
+      if (!cleanedName) { name.focus(); return; }
+      const groupName = group.value.trim();
+      let groupId = null;
+      if (groupName) {
+        let found = state.groups.find((g) => g.name.toLowerCase() === groupName.toLowerCase());
+        if (!found) found = await request("/groups", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, name: groupName }) });
+        groupId = found.id;
+      }
+      const fields = textareas.map((item) => ({
+        node_id: String(item.binding.node_id),
+        node_type: String(item.binding.node_type || ""),
+        widget_name: String(item.binding.widget_name),
+        binding_key: String(item.binding.binding_key || ""),
+        label: String(item.binding.label || item.binding.widget_name),
+        value: item.textarea.value,
+      }));
+      const existing = await findBookmarkConflict(cleanedName, groupId);
+      if (existing) {
+        showBookmarkConflict({ existing, cleanedName, groupName, groupId, fields, saveDialog: dlg, nameInput: name });
+        return;
+      }
+      const created = await request("/prompts", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, group_id: groupId, name: cleanedName, fields, notes: "" }) });
+      if (created && created.id) {
+        await request(`/prompts/${encodeURIComponent(created.id)}/media`, {
+          method: "PUT",
+          body: JSON.stringify({ media: carousel.getMediaList() }),
+        }).catch(console.error);
+      }
+      dlg.overlay.remove();
+      await loadData();
+      notify("success", t("promptBookmarked"), cleanedName);
+    })
+  );
+
+  setTimeout(() => {
+    if (!name.value) name.focus();
+  }, 50);
+}
+
+async function manualCreatePrompt() {
+  if (!state.workflow) return;
+  const bindings = state.bindings;
+  if (!bindings || !bindings.length) {
+    notify("info", t("configure"), t("saveBeforeBookmark"));
+    return configureBindings();
+  }
+  const dlg = openDialog(t("manualPromptTitle"), { resizable: true });
+  const name = document.createElement("input"); name.className = "pb-input"; name.placeholder = t("bookmarkNamePlaceholder"); name.autofocus = true;
+  const group = document.createElement("input"); group.className = "pb-input"; group.placeholder = t("groupPlaceholder");
+  const carousel = createMediaCarousel([]);
+  dlg.body.append(field(t("bookmarkName"), name), field(t("groupOptional"), group), field(t("customCover") || "Images / Media", carousel.container));
+
+  const fieldsSection = document.createElement("div"); fieldsSection.className = "pb-section pb-section-fields";
+  const fieldsLabel = document.createElement("div"); fieldsLabel.className = "pb-label"; fieldsLabel.textContent = t("fieldsToSave"); fieldsSection.appendChild(fieldsLabel);
+  
+  const textareas = [];
+  for (const b of bindings) {
+    const wrap = document.createElement("div"); wrap.className = "pb-field-item-wrap";
+    const lbl = document.createElement("div"); lbl.className = "pb-label"; lbl.style.fontSize = "11px"; lbl.textContent = b.label || b.widget_name;
+    const txt = document.createElement("textarea"); txt.className = "pb-input pb-field-textarea"; txt.placeholder = b.widget_name;
+    wrap.append(lbl, txt);
+    fieldsSection.appendChild(wrap);
+    textareas.push({ binding: b, textarea: txt });
+  }
+  dlg.body.appendChild(fieldsSection);
+
+  dlg.foot.append(button(t("cancel"), () => dlg.overlay.remove()), button(t("createBookmark"), async () => {
+    const cleanedName = name.value.trim(); if (!cleanedName) { name.focus(); return; }
+    const groupName = group.value.trim(); let groupId = null;
+    if (groupName) {
+      let found = state.groups.find((g) => g.name.toLowerCase() === groupName.toLowerCase());
+      if (!found) found = await request("/groups", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, name: groupName }) });
+      groupId = found.id;
+    }
+    const fields = textareas.map((item) => ({
+      node_id: String(item.binding.node_id),
+      node_type: String(item.binding.node_type || ""),
+      widget_name: String(item.binding.widget_name),
+      binding_key: String(item.binding.binding_key || ""),
+      label: String(item.binding.label || item.binding.widget_name),
+      value: item.textarea.value,
+    }));
+    const existing = await findBookmarkConflict(cleanedName, groupId);
+    if (existing) {
+      showBookmarkConflict({ existing, cleanedName, groupName, groupId, fields, saveDialog: dlg, nameInput: name });
+      return;
+    }
+    const created = await request("/prompts", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, group_id: groupId, name: cleanedName, fields, notes: "" }) });
+    if (created && created.id) {
+      await request(`/prompts/${encodeURIComponent(created.id)}/media`, {
+        method: "PUT",
+        body: JSON.stringify({ media: carousel.getMediaList() }),
+      }).catch(console.error);
+    }
+    dlg.overlay.remove(); await loadData(); notify("success", t("promptBookmarked"), cleanedName);
+  }));
+  setTimeout(() => name.focus(), 0);
+}
+
+async function editPrompt(prompt) {
+  const dlg = openDialog(t("editPrompt"), { resizable: true });
+  const name = document.createElement("input"); name.className = "pb-input"; name.value = prompt.name || "";
+  const group = document.createElement("input"); group.className = "pb-input"; group.value = prompt.group_name || ""; group.placeholder = t("groupPlaceholder");
+  const notes = document.createElement("input"); notes.className = "pb-input"; notes.value = prompt.notes || ""; notes.placeholder = t("notesPlaceholder");
+
+  dlg.body.append(
+    field(t("bookmarkName"), name),
+    field(t("groupOptional"), group),
+    field(t("notes"), notes),
+  );
+
+  const existingMedia = (prompt.media && prompt.media.length)
+    ? prompt.media
+    : (prompt.latest_media ? [prompt.latest_media] : []);
+  const carousel = createMediaCarousel(existingMedia);
+  dlg.body.append(field(t("customCover") || "Images / Media", carousel.container));
+
+  const fieldsSection = document.createElement("div"); fieldsSection.className = "pb-section pb-section-fields";
+  const fieldsLabel = document.createElement("div"); fieldsLabel.className = "pb-label"; fieldsLabel.textContent = t("fieldsToSave"); fieldsSection.appendChild(fieldsLabel);
+
+  const textareas = [];
+  for (const f of prompt.fields || []) {
+    const wrap = document.createElement("div"); wrap.className = "pb-field-item-wrap";
+    const lbl = document.createElement("div"); lbl.className = "pb-label"; lbl.style.fontSize = "11px"; lbl.textContent = f.label || f.widget_name;
+    const txt = document.createElement("textarea"); txt.className = "pb-input pb-field-textarea"; txt.value = String(f.value ?? "");
+    wrap.append(lbl, txt);
+    fieldsSection.appendChild(wrap);
+    textareas.push({ field: f, textarea: txt });
+  }
+  dlg.body.appendChild(fieldsSection);
+
+  dlg.foot.append(button(t("cancel"), () => dlg.overlay.remove()), button(t("saveChanges"), async () => {
+    const cleanedName = name.value.trim(); if (!cleanedName) { name.focus(); return; }
+    const groupName = group.value.trim(); let groupId = null;
+    if (groupName) {
+      let found = (state.groups || []).find((g) => g.name.toLowerCase() === groupName.toLowerCase());
+      if (!found && state.workflow) found = await request("/groups", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, name: groupName }) });
+      groupId = found ? found.id : null;
+    }
+    const updatedFields = textareas.map((item) => ({
+      ...item.field,
+      value: item.textarea.value,
+    }));
+    await request(`/prompts/${encodeURIComponent(prompt.id)}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        name: cleanedName,
+        group_id: groupId,
+        notes: notes.value.trim(),
+        fields: updatedFields,
+      }),
+    });
+    await request(`/prompts/${encodeURIComponent(prompt.id)}/media`, {
+      method: "PUT",
+      body: JSON.stringify({ media: carousel.getMediaList() }),
+    }).catch(console.error);
+    dlg.overlay.remove(); await loadData(); notify("success", t("promptUpdated"), cleanedName);
+  }));
 }
 
 function applyPrompt(prompt) {
@@ -561,6 +1095,9 @@ function mediaUrl(media) { const q = new URLSearchParams({ filename: media.filen
 function isVideo(media) { return media?.media_type === "video" || /\.(mp4|webm|mov|mkv|m4v)$/i.test(media?.filename || ""); }
 
 async function loadPrompts() {
+  try {
+    state.encryptionStatus = await request("/encryption/status");
+  } catch (_) {}
   if (!state.workflow && !state.allMode) { state.prompts = []; state.allGroups = []; render(); return; }
   const params = new URLSearchParams({ limit: "500", sort: state.sort || "recent" });
   if (!state.allMode && state.workflow) params.set("workflow_id", state.workflow.id);
@@ -619,8 +1156,95 @@ async function importBackup() {
   input.click();
 }
 
-function showSettings() {
-  const dlg = openDialog(t("settings"));
+function exportDbFile() {
+  window.open("/prompt-bookmarks/db/file", "_blank");
+  notify("success", t("backupExported"));
+}
+function importDbFile() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".db,application/octet-stream";
+  input.onchange = async () => {
+    const file = input.files?.[0]; if (!file) return;
+    if (!window.confirm(t("importDbConfirm"))) return;
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const resp = await fetch("/prompt-bookmarks/db/file", { method: "POST", body: formData });
+      const data = await resp.json();
+      if (data && data.ok) {
+        notify("success", t("dbImported"));
+        if (state.workflow) await loadData(); else await loadPrompts();
+      } else {
+        throw new Error(data?.error || "Failed to restore database");
+      }
+    } catch (err) {
+      notify("error", t("title"), String(err?.message || err));
+    }
+  };
+  input.click();
+}
+
+async function openEnableEncryptionDialog(onDone) {
+  const dlg = openDialog(t("enableEncryption"));
+  const warn = document.createElement("div"); warn.className = "pb-help"; warn.style.color = "#fbbf24"; warn.style.fontWeight = "bold"; warn.style.marginBottom = "10px"; warn.textContent = t("passwordWarning");
+  const pass1 = document.createElement("input"); pass1.type = "password"; pass1.className = "pb-input"; pass1.placeholder = t("enterPassword");
+  const pass2 = document.createElement("input"); pass2.type = "password"; pass2.className = "pb-input"; pass2.placeholder = t("confirmPassword");
+  dlg.body.append(warn, field(t("enterPassword"), pass1), field(t("confirmPassword"), pass2));
+  dlg.foot.append(button(t("cancel"), () => dlg.overlay.remove()), button(t("saveChanges"), async () => {
+    const p1 = pass1.value; const p2 = pass2.value;
+    if (!p1 || p1.length < 4) { alert(t("passwordTooShort")); pass1.focus(); return; }
+    if (p1 !== p2) { alert(t("passwordMismatch")); pass2.focus(); return; }
+    try {
+      await request("/encryption/enable", { method: "POST", body: JSON.stringify({ password: p1, algorithm: "AES-256-GCM" }) });
+      dlg.overlay.remove();
+      notify("success", t("encryptionEnabledSuccess"));
+      if (onDone) onDone();
+      await loadPrompts();
+    } catch (err) {
+      alert(String(err?.message || err));
+    }
+  }));
+}
+
+async function openDisableEncryptionDialog(onDone) {
+  const dlg = openDialog(t("disableEncryption"));
+  const pass = document.createElement("input"); pass.type = "password"; pass.className = "pb-input"; pass.placeholder = t("enterPassword");
+  dlg.body.append(field(t("enterPassword"), pass));
+  dlg.foot.append(button(t("cancel"), () => dlg.overlay.remove()), button(t("disableEncryption"), async () => {
+    const p = pass.value; if (!p) { pass.focus(); return; }
+    try {
+      await request("/encryption/disable", { method: "POST", body: JSON.stringify({ password: p }) });
+      dlg.overlay.remove();
+      notify("success", t("encryptionDisabledSuccess"));
+      if (onDone) onDone();
+      await loadPrompts();
+    } catch (err) {
+      alert(String(err?.message || err));
+    }
+  }));
+}
+
+async function openUnlockDialog(onDone) {
+  const dlg = openDialog(t("unlockDatabase"));
+  const pass = document.createElement("input"); pass.type = "password"; pass.className = "pb-input"; pass.placeholder = t("enterPassword");
+  dlg.body.append(field(t("enterPassword"), pass));
+  dlg.foot.append(button(t("cancel"), () => dlg.overlay.remove()), button(t("unlockDatabase"), async () => {
+    const p = pass.value; if (!p) { pass.focus(); return; }
+    try {
+      await request("/encryption/unlock", { method: "POST", body: JSON.stringify({ password: p }) });
+      dlg.overlay.remove();
+      notify("success", t("unlockedSuccess"));
+      if (onDone) onDone();
+      await loadPrompts();
+    } catch (err) {
+      alert(String(err?.message || err));
+    }
+  }));
+}
+
+async function showSettings() {
+  const dlg = openDialog(t("settings"), { className: "pb-dialog-settings" });
   const languageRow = document.createElement("div"); languageRow.className = "pb-settings-row";
   const languageText = document.createElement("div"); languageText.textContent = t("language");
   const languageSelect = document.createElement("select"); languageSelect.className = "pb-select";
@@ -652,11 +1276,41 @@ function showSettings() {
   autoplay.onchange = async () => { await app.extensionManager?.setting?.set?.(AUTOPLAY_SETTING, autoplay.checked); window.dispatchEvent(new CustomEvent("prompt-bookmarks-autoplay-changed")); };
   autoplayRow.append(autoplayText, autoplay); dlg.body.appendChild(autoplayRow);
 
+  // Encryption status & controls
+  const encStatus = await request("/encryption/status").catch(() => ({ enabled: false, unlocked: true }));
+  const encRow = document.createElement("div"); encRow.className = "pb-settings-row";
+  const encInfo = document.createElement("div");
+  encInfo.innerHTML = `<div>${t("encryption")}</div><div class="pb-help">${encStatus.enabled ? t("statusEncrypted") : t("statusUnencrypted")}</div>`;
+  const encActions = document.createElement("div"); encActions.className = "pb-row"; encActions.style.gap = "4px";
+  if (!encStatus.enabled) {
+    encActions.appendChild(button(t("enableEncryption"), () => { dlg.overlay.remove(); openEnableEncryptionDialog(showSettings); }));
+  } else if (!encStatus.unlocked) {
+    encActions.append(
+      button(t("unlockDatabase"), () => { dlg.overlay.remove(); openUnlockDialog(showSettings); }),
+      button(t("disableEncryption"), () => { dlg.overlay.remove(); openDisableEncryptionDialog(showSettings); }, "pb-danger")
+    );
+  } else {
+    encActions.append(
+      button(t("lockDatabase"), async () => { await request("/encryption/lock", { method: "POST" }); dlg.overlay.remove(); showSettings(); await loadPrompts(); }),
+      button(t("disableEncryption"), () => { dlg.overlay.remove(); openDisableEncryptionDialog(showSettings); }, "pb-danger")
+    );
+  }
+  encRow.append(encInfo, encActions);
+  dlg.body.appendChild(encRow);
+
+  // Backup & Restore
   const backupRow = document.createElement("div"); backupRow.className = "pb-settings-row";
   const backupText = document.createElement("div"); backupText.textContent = t("backup");
-  const backupActions = document.createElement("div"); backupActions.className = "pb-row";
-  backupActions.append(button(t("exportBackup"), exportBackup), button(t("importBackup"), importBackup));
+  const backupActions = document.createElement("div"); backupActions.className = "pb-row"; backupActions.style.gap = "4px";
+  backupActions.append(
+    button(t("exportBackup"), exportBackup),
+    button(t("importBackup"), importBackup),
+    button(t("exportDb"), exportDbFile),
+    button(t("importDb"), importDbFile)
+  );
   backupRow.append(backupText, backupActions); dlg.body.appendChild(backupRow);
+
+  const dbNote = document.createElement("div"); dbNote.className = "pb-help"; dbNote.textContent = t("dbLocation"); dlg.body.appendChild(dbNote);
 
   if (state.workflow) {
     const promptRow = document.createElement("div"); promptRow.className = "pb-settings-row";
@@ -669,18 +1323,46 @@ function showSettings() {
 
 function renderCard(prompt) {
   const card = document.createElement("div"); card.className = "pb-card";
-  if (prompt.latest_media) {
-    const media = isVideo(prompt.latest_media) ? document.createElement("video") : document.createElement("img");
-    media.className = "pb-media";
-    const src = mediaUrl(prompt.latest_media);
-    if (media.tagName === "VIDEO") media.dataset.pbSrc = src; else media.src = src;
-    media.addEventListener("error", () => {
-      if (!media.isConnected) return;
-      const missing = document.createElement("div"); missing.className = "pb-media-missing"; missing.textContent = t("previewUnavailable");
-      media.replaceWith(missing);
-    }, { once: true });
-    if (media.tagName === "VIDEO") { media.controls = true; media.muted = true; media.preload = "none"; } else media.loading = "lazy";
-    card.appendChild(media);
+  const mediaList = (prompt.media && prompt.media.length) ? prompt.media : (prompt.latest_media ? [prompt.latest_media] : []);
+
+  if (!prompt.is_locked && mediaList.length > 0) {
+    if (mediaList.length === 1) {
+      const item = mediaList[0];
+      const media = isVideo(item) ? document.createElement("video") : document.createElement("img");
+      media.className = "pb-media";
+      const src = mediaUrl(item);
+      if (media.tagName === "VIDEO") media.dataset.pbSrc = src; else media.src = src;
+      media.addEventListener("error", () => {
+        if (!media.isConnected) return;
+        const missing = document.createElement("div"); missing.className = "pb-media-missing"; missing.textContent = t("previewUnavailable");
+        media.replaceWith(missing);
+      }, { once: true });
+      if (media.tagName === "VIDEO") { media.controls = true; media.muted = true; media.preload = "none"; } else media.loading = "lazy";
+      media.style.cursor = "zoom-in";
+      media.title = t("viewFullscreen");
+      media.onclick = (e) => {
+        e.stopPropagation();
+        openInWindowImageViewer(mediaList, 0, prompt.name);
+      };
+      card.appendChild(media);
+    } else {
+      const strip = document.createElement("div");
+      strip.className = "pb-card-media-strip";
+      mediaList.forEach((item, idx) => {
+        const isVid = isVideo(item);
+        const el = isVid ? document.createElement("video") : document.createElement("img");
+        el.className = "pb-card-media-thumb";
+        const src = mediaUrl(item);
+        if (isVid) { el.dataset.pbSrc = src; el.muted = true; } else { el.src = src; el.loading = "lazy"; }
+        el.title = `${prompt.name} (${idx + 1}/${mediaList.length})`;
+        el.onclick = (e) => {
+          e.stopPropagation();
+          openInWindowImageViewer(mediaList, idx, prompt.name);
+        };
+        strip.appendChild(el);
+      });
+      card.appendChild(strip);
+    }
   }
   const body = document.createElement("div"); body.className = "pb-cardbody";
   const title = document.createElement("div"); title.className = "pb-cardtitle"; title.textContent = prompt.name; body.appendChild(title);
@@ -693,7 +1375,13 @@ function renderCard(prompt) {
   if (first) { const s = document.createElement("div"); s.className = "pb-snippet"; s.textContent = String(first.value || ""); body.appendChild(s); }
   const actions = document.createElement("div"); actions.className = "pb-actions";
   const apply = button(t("apply"), () => applyPrompt(prompt)); apply.disabled = !state.workflow || prompt.workflow_id !== state.workflow.id;
-  actions.append(apply, button(t("copy"), () => copyPrompt(prompt)), button(t("delete"), () => deletePrompt(prompt), "pb-danger")); body.appendChild(actions); card.appendChild(body); return card;
+  actions.append(
+    apply,
+    button(t("copy"), () => copyPrompt(prompt)),
+    button(t("edit"), () => editPrompt(prompt)),
+    button(t("delete"), () => deletePrompt(prompt), "pb-danger")
+  );
+  body.appendChild(actions); card.appendChild(body); return card;
 }
 async function renameSelectedGroup() {
   const group = (state.groups || []).find((item) => item.id === state.groupId);
@@ -740,7 +1428,46 @@ function render() {
   if (!state.root) return; state.root.replaceChildren();
   const head = document.createElement("div"); head.className = "pb-head";
   const top = document.createElement("div"); top.className = "pb-row";
-  const title = document.createElement("div"); title.className = "pb-title"; title.textContent = t("title"); top.append(title, button("⚙", showSettings)); head.appendChild(top);
+  const title = document.createElement("div"); title.className = "pb-title"; title.textContent = t("title");
+  if (state.encryptionStatus?.enabled && state.encryptionStatus?.unlocked) {
+    const lockBtn = button("🔒 " + (t("lock") || "Lock"), async () => {
+      await request("/encryption/lock", { method: "POST" });
+      state.encryptionStatus = await request("/encryption/status").catch(() => null);
+      await loadPrompts();
+      render();
+      notify("info", t("title"), "Database locked");
+    });
+    lockBtn.style.padding = "2px 8px"; lockBtn.style.fontSize = "11px";
+    top.append(title, lockBtn, button("⚙", showSettings));
+  } else {
+    top.append(title, button("⚙", showSettings));
+  }
+  head.appendChild(top);
+
+  if (state.encryptionStatus?.enabled && !state.encryptionStatus?.unlocked) {
+    const encWrap = document.createElement("div");
+    encWrap.style.cssText = "display:flex;gap:6px;align-items:center;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);border-radius:8px;padding:6px 8px;margin-bottom:4px;";
+    const passInput = document.createElement("input");
+    passInput.type = "password"; passInput.className = "pb-input";
+    passInput.style.cssText = "flex:1;padding:5px 8px;font-size:12px;";
+    passInput.placeholder = t("enterPassword") || "Enter master password...";
+    const unlockBtn = button("🔓 " + (t("unlock") || "Unlock"), async () => {
+      const p = passInput.value; if (!p) { passInput.focus(); return; }
+      try {
+        await request("/encryption/unlock", { method: "POST", body: JSON.stringify({ password: p }) });
+        notify("success", t("unlockedSuccess"));
+        state.encryptionStatus = await request("/encryption/status").catch(() => null);
+        await loadPrompts();
+        render();
+      } catch (e) {
+        notify("error", t("title"), String(e.message || e));
+      }
+    });
+    unlockBtn.style.padding = "5px 10px"; unlockBtn.style.fontSize = "12px";
+    passInput.onkeydown = (e) => { if (e.key === "Enter") unlockBtn.click(); };
+    encWrap.append(passInput, unlockBtn);
+    head.appendChild(encWrap);
+  }
   const wf = document.createElement("div"); wf.className = "pb-wf"; wf.textContent = state.workflow?.name || t("noActiveWorkflow"); head.appendChild(wf);
   const tabs = document.createElement("div"); tabs.className = "pb-tabs";
   tabs.append(
@@ -751,7 +1478,12 @@ function render() {
   const search = document.createElement("input"); search.className = "pb-search"; search.placeholder = t("search"); search.value = state.search; let timer;
   search.oninput = () => { state.search = search.value; clearTimeout(timer); timer = setTimeout(() => loadPrompts().catch(console.error), 220); }; head.appendChild(search);
   renderGroupFilters(head);
-  const save = button(t("saveCurrent"), saveCurrentPrompt); save.disabled = !state.workflow; head.appendChild(save); state.root.appendChild(head);
+  const btnRow = document.createElement("div"); btnRow.style.display = "flex"; btnRow.style.gap = "6px";
+  const save = button(t("saveCurrent"), saveCurrentPrompt); save.disabled = !state.workflow; save.style.flex = "1";
+  const manual = button(t("manualPrompt"), manualCreatePrompt); manual.disabled = !state.workflow; manual.title = t("manualPromptDesc");
+  btnRow.append(save, manual);
+  head.appendChild(btnRow);
+  state.root.appendChild(head);
   const body = document.createElement("div"); body.className = "pb-body";
   if (!state.workflow && !state.allMode) { const e = document.createElement("div"); e.className = "pb-empty"; e.textContent = t("openWorkflow"); body.appendChild(e); }
   else if ((!state.bindings.length || !collectCurrentFields().length) && !state.allMode) {
@@ -933,5 +1665,6 @@ app.registerExtension({
     refreshExtensionLabels();
     syncActiveWorkflow(true).catch(console.error); state.syncTimer ||= setInterval(() => syncActiveWorkflow(false).catch(console.error), 750);
     api.addEventListener("execution_success", (event) => { if (settingGet(AUTOLINK_SETTING, true) !== false) onExecutionSuccess(event); });
+    window.addEventListener("prompt-bookmarks-create", (event) => { openExternalSaveDialog(event.detail || {}); });
   },
 });

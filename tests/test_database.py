@@ -220,6 +220,66 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(binding["node_id"], "7")
         self.assertEqual(binding["binding_key"], "")
 
+    def test_link_media_to_prompt(self):
+        prompt = self.db.create_prompt(self.workflow_id, "Cover Test", self.fields())
+        ok = self.db.link_media_to_prompt(prompt["id"], "custom_cover.png", subfolder="custom", media_type="image", storage_type="input")
+        self.assertTrue(ok)
+        media_list = self.db.list_media(prompt["id"])
+        self.assertEqual(len(media_list), 1)
+        self.assertEqual(media_list[0]["filename"], "custom_cover.png")
+        self.assertEqual(media_list[0]["subfolder"], "custom")
+
+    def test_multi_media_replace_and_get(self):
+        prompt = self.db.create_prompt(self.workflow_id, "Multi Cover Test", self.fields())
+        items = [
+            {"filename": "img1.png", "subfolder": "sub1", "type": "output", "media_type": "image"},
+            {"filename": "img2.png", "subfolder": "sub2", "type": "output", "media_type": "image"},
+        ]
+        updated = self.db.replace_prompt_media(prompt["id"], items)
+        self.assertEqual(len(updated), 2)
+        loaded = self.db.get_prompt(prompt["id"])
+        self.assertEqual(len(loaded["media"]), 2)
+        filenames = [m["filename"] for m in loaded["media"]]
+        self.assertIn("img1.png", filenames)
+        self.assertIn("img2.png", filenames)
+
+    def test_database_encryption_lifecycle(self):
+        prompt = self.db.create_prompt(self.workflow_id, "Secret Prompt", self.fields("A top secret prompt"))
+        self.assertFalse(self.db.is_encrypted())
+
+        # Enable encryption
+        res = self.db.enable_encryption("MyMasterPassword123")
+        self.assertEqual(res["status"], "ok")
+        self.assertEqual(res["encrypted_count"], 1)
+        self.assertTrue(self.db.is_encrypted())
+
+        # Read while unlocked
+        loaded = self.db.get_prompt(prompt["id"])
+        self.assertFalse(loaded["is_locked"])
+        self.assertEqual(loaded["fields"][0]["value"], "A top secret prompt")
+
+        # Lock session
+        self.db.lock_session()
+        locked = self.db.get_prompt(prompt["id"])
+        self.assertTrue(locked["is_locked"])
+
+        # Try unlock with wrong password
+        self.assertFalse(self.db.unlock_session("WrongPass"))
+        self.assertTrue(self.db.get_prompt(prompt["id"])["is_locked"])
+
+        # Unlock with right password
+        self.assertTrue(self.db.unlock_session("MyMasterPassword123"))
+        unlocked = self.db.get_prompt(prompt["id"])
+        self.assertFalse(unlocked["is_locked"])
+        self.assertEqual(unlocked["fields"][0]["value"], "A top secret prompt")
+
+        # Disable encryption
+        dec_res = self.db.disable_encryption("MyMasterPassword123")
+        self.assertEqual(dec_res["status"], "ok")
+        self.assertFalse(self.db.is_encrypted())
+        final_prompt = self.db.get_prompt(prompt["id"])
+        self.assertEqual(final_prompt["fields"][0]["value"], "A top secret prompt")
+
 
 if __name__ == "__main__":
     unittest.main()
