@@ -676,6 +676,12 @@ async function manualCreatePrompt() {
       showBookmarkConflict({ existing, cleanedName, groupName, groupId, fields, saveDialog: dlg, nameInput: name });
       return;
     }
+    await request("/prompts", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, group_id: groupId, name: cleanedName, fields, notes: "" }) });
+    dlg.overlay.remove(); await loadData(); notify("success", t("promptBookmarked"), cleanedName);
+  }));
+  setTimeout(() => name.focus(), 0);
+}
+
 async function editPrompt(prompt) {
   const dlg = openDialog(t("editPrompt"));
   const name = document.createElement("input"); name.className = "pb-input"; name.value = prompt.name || "";
