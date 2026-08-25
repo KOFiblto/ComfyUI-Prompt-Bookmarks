@@ -70,6 +70,7 @@ const I18N = {
     notes: "备注 (可选)",
     notesPlaceholder: "添加关于此提示词的备注...",
     saveChanges: "保存修改",
+    showAllWidgets: "显示所有控件 (LoRA, 宽高比, 步数等)",
     promptBookmarked: "已收藏提示词",
     duplicatePromptTitle: "已存在同名收藏",
     duplicatePromptDetail: "分组“{group}”中已经有“{name}”。请选择覆盖原收藏，或返回修改名称。",
@@ -171,6 +172,7 @@ const I18N = {
     notes: "Notes (optional)",
     notesPlaceholder: "Add notes about this prompt...",
     saveChanges: "Save Changes",
+    showAllWidgets: "Show all widgets (LoRA, aspect ratio, steps, etc.)",
     promptBookmarked: "Prompt bookmarked",
     duplicatePromptTitle: "Bookmark already exists",
     duplicatePromptDetail: "“{name}” already exists in “{group}”. Choose Overwrite to update it, or go back and change the name.",
@@ -391,21 +393,28 @@ function resolveLiveField(field) {
   if (matches.length !== 1) return null;
   return { node: matches[0].node, widget: matches[0].widget, recovered: true };
 }
-function promptCandidates() {
+function promptCandidates(includeAllWidgets = false) {
   const out = [];
-  const likely = /(prompt|text|positive|negative|caption|instruction|description|motion|camera|scene|character)/i;
-  const reject = /^(filename|filename_prefix|path|directory|folder|seed|url|model|ckpt|checkpoint)$/i;
+  const likely = /(prompt|text|positive|negative|caption|instruction|description|motion|camera|scene|character|lora|aspect|ratio|steps|cfg|denoise)/i;
+  const reject = includeAllWidgets
+    ? /^(_|control_after_generate|upload)$/i
+    : /^(filename|filename_prefix|path|directory|folder|seed|url|model|ckpt|checkpoint)$/i;
   const noteLike = /(note|notes|markdown|sticky)/i;
   for (const node of app.graph?._nodes || []) {
     for (const widget of node.widgets || []) {
-      if (!widget?.name || typeof widget.value !== "string") continue;
+      if (!widget?.name) continue;
+      const val = widget.value;
+      const isSupportedType = includeAllWidgets
+        ? (typeof val === "string" || typeof val === "number" || typeof val === "boolean")
+        : (typeof val === "string");
+      if (!isSupportedType) continue;
       const name = String(widget.name); if (reject.test(name)) continue;
       const title = nodeTitle(node); const type = nodeType(node);
       const groupPath = groupPathForNode(node); const displayPath = [...groupPath, title, name].join(" › ");
       const isNote = noteLike.test(`${title} ${type}`);
       out.push({
         node_id: String(node.id), node_type: type, widget_name: name, binding_key: bindingKey(node, name), label: `${title} · ${name}`,
-        display_path: displayPath, group_path: groupPath, preview: String(widget.value || ""),
+        display_path: displayPath, group_path: groupPath, preview: String(val ?? ""),
         note_like: isNote,
         recommended: !isNote && (likely.test(name) || likely.test(title)),
       });
@@ -444,9 +453,9 @@ function collectCurrentFields() {
   return fields;
 }
 
-async function configureBindings() {
+async function configureBindings(includeAll = false) {
   if (!state.workflow) return;
-  const candidates = promptCandidates();
+  const candidates = promptCandidates(includeAll);
   if (!candidates.length) return notify("warn", t("noTextWidgets"), t("noTextWidgetsDetail"));
   const existing = new Set(state.bindings.map((b) => `${b.node_id}::${b.widget_name}`));
   const usableExisting = candidates.some((c) => existing.has(`${c.node_id}::${c.widget_name}`));
@@ -454,19 +463,28 @@ async function configureBindings() {
   const dlg = openDialog(t("configureTitle"));
   const help = document.createElement("div"); help.className = "pb-help"; help.textContent = t("configureDesc"); dlg.body.appendChild(help);
   const note = document.createElement("div"); note.className = "pb-help"; note.textContent = t("exposedOnly"); dlg.body.appendChild(note);
+
+  const toggleRow = document.createElement("div"); toggleRow.style.display = "flex"; toggleRow.style.alignItems = "center"; toggleRow.style.gap = "6px"; toggleRow.className = "pb-help";
+  const toggleCheck = document.createElement("input"); toggleCheck.type = "checkbox"; toggleCheck.checked = includeAll;
+  toggleCheck.onchange = () => { dlg.overlay.remove(); configureBindings(toggleCheck.checked); };
+  const toggleLabel = document.createElement("label"); toggleLabel.textContent = t("showAllWidgets"); toggleLabel.style.cursor = "pointer";
+  toggleLabel.onclick = () => { toggleCheck.checked = !toggleCheck.checked; dlg.overlay.remove(); configureBindings(toggleCheck.checked); };
+  toggleRow.append(toggleCheck, toggleLabel);
+  dlg.body.appendChild(toggleRow);
+
   const countWrap = document.createElement("div"); countWrap.className = "pb-help"; countWrap.style.display = "flex"; countWrap.style.justifyContent = "space-between"; countWrap.style.alignItems = "center";
   const count = document.createElement("div");
   const updateCount = () => { count.textContent = t("selectedCount", { count: selected.size }); }; updateCount();
   const selectActions = document.createElement("div"); selectActions.style.display = "flex"; selectActions.style.gap = "6px";
   const btnSelectAll = button(t("selectAll"), () => {
     for (const c of candidates) selected.add(`${c.node_id}::${c.widget_name}`);
-    dlg.body.querySelectorAll("input[type=checkbox]").forEach((cb) => { cb.checked = true; });
+    dlg.body.querySelectorAll(".pb-candidate input[type=checkbox]").forEach((cb) => { cb.checked = true; });
     updateCount();
   });
   btnSelectAll.style.fontSize = "11px"; btnSelectAll.style.padding = "2px 8px";
   const btnClearAll = button(t("clearAll"), () => {
     selected.clear();
-    dlg.body.querySelectorAll("input[type=checkbox]").forEach((cb) => { cb.checked = false; });
+    dlg.body.querySelectorAll(".pb-candidate input[type=checkbox]").forEach((cb) => { cb.checked = false; });
     updateCount();
   });
   btnClearAll.style.fontSize = "11px"; btnClearAll.style.padding = "2px 8px";
