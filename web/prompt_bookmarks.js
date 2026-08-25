@@ -334,7 +334,7 @@ function injectStyles() {
     .pb-search,.pb-input,.pb-select{width:100%;box-sizing:border-box;border:1px solid var(--border-color);background:var(--comfy-input-bg);color:var(--input-text);border-radius:6px;padding:8px;outline:none}.pb-groups{display:flex;gap:5px;overflow-x:auto}.pb-chip{white-space:nowrap;border-radius:999px;padding:4px 8px;font-size:12px}.pb-group-wrap{display:inline-flex;align-items:center;flex:0 0 auto}.pb-group-wrap .pb-chip{border-radius:999px 0 0 999px}.pb-group-delete{border-left:0!important;border-radius:0 999px 999px 0!important;padding:4px 7px!important;font-size:12px!important;color:#ff7777}.pb-group-edit{flex:0 0 auto;padding:4px 7px!important}
     .pb-body{flex:1;overflow:auto;padding:10px}.pb-empty{color:var(--descrip-text);text-align:center;padding:28px 12px;line-height:1.6}.pb-empty .pb-btn{margin-top:10px}
     .pb-card{border:1px solid var(--border-color);border-radius:9px;overflow:hidden;margin-bottom:10px;background:var(--comfy-input-bg)}.pb-media{width:100%;aspect-ratio:16/9;display:block;object-fit:cover;background:#111}.pb-media-missing{height:160px;display:flex;align-items:center;justify-content:center;padding:10px;box-sizing:border-box;text-align:center;color:var(--descrip-text);background:#111;font-size:12px}.pb-cardbody{padding:9px;display:flex;flex-direction:column;gap:6px}.pb-cardtitle{font-size:14px;font-weight:650}.pb-meta{display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--descrip-text)}.pb-badge{border:1px solid var(--border-color);border-radius:5px;padding:1px 5px}.pb-snippet{font-size:12px;line-height:1.45;color:var(--descrip-text);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;word-break:break-word}.pb-actions{display:flex;gap:5px}.pb-actions .pb-btn{flex:1;padding:5px 6px}.pb-danger{color:#ff7777}
-    .pb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.52);display:flex;align-items:center;justify-content:center;z-index:100000;padding:18px}.pb-dialog{width:min(680px,95vw);max-height:88vh;display:flex;flex-direction:column;background:var(--comfy-menu-bg);border:1px solid var(--border-color);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.45);color:var(--fg-color)}.pb-dialog-head,.pb-dialog-foot{padding:14px;display:flex;align-items:center;gap:8px}.pb-dialog-head{border-bottom:1px solid var(--border-color)}.pb-dialog-title{font-size:16px;font-weight:700;flex:1}.pb-dialog-body{padding:14px;overflow:auto;display:flex;flex-direction:column;gap:12px}.pb-dialog-foot{border-top:1px solid var(--border-color);justify-content:flex-end}.pb-help{font-size:12px;line-height:1.5;color:var(--descrip-text)}
+    .pb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.52);display:flex;align-items:center;justify-content:center;z-index:100000;padding:18px}.pb-dialog{width:min(680px,95vw);max-height:88vh;display:flex;flex-direction:column;background:var(--comfy-menu-bg);border:1px solid var(--border-color);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.45);color:var(--fg-color);box-sizing:border-box}.pb-dialog-settings{min-width:820px;max-width:920px;width:860px}.pb-dialog-resizable{resize:both;overflow:auto;min-width:520px;min-height:420px;max-width:94vw;max-height:92vh}.pb-dialog-head,.pb-dialog-foot{padding:14px;display:flex;align-items:center;gap:8px}.pb-dialog-head{border-bottom:1px solid var(--border-color)}.pb-dialog-title{font-size:16px;font-weight:700;flex:1}.pb-dialog-body{padding:14px;overflow:auto;display:flex;flex-direction:column;gap:12px;flex:1}.pb-dialog-foot{border-top:1px solid var(--border-color);justify-content:flex-end}.pb-help{font-size:12px;line-height:1.5;color:var(--descrip-text)}.pb-lightbox-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100005;backdrop-filter:blur(6px);cursor:zoom-out}.pb-lightbox-close{position:absolute;top:18px;right:24px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:22px;border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}.pb-lightbox-close:hover{background:rgba(239,68,68,.8)}.pb-carousel-container{display:flex;gap:10px;overflow-x:auto;padding:6px 2px 10px 2px;align-items:center}.pb-carousel-item{position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--border-color);flex:0 0 auto;background:#111}.pb-carousel-item img,.pb-carousel-item video{width:100%;height:100%;object-fit:cover}.pb-carousel-remove{position:absolute;top:3px;right:3px;background:rgba(239,68,68,.9);border:none;color:#fff;font-size:11px;font-weight:bold;width:20px;height:20px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s}.pb-carousel-remove:hover{transform:scale(1.15)}.pb-carousel-add{width:80px;height:80px;border-radius:8px;border:2px dashed var(--border-color);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--descrip-text);font-size:11px;gap:4px;flex:0 0 auto;transition:all .2s;background:rgba(255,255,255,.03)}.pb-carousel-add:hover{border-color:#10b981;color:#10b981;background:rgba(16,185,129,.08)}
     .pb-candidate{border:1px solid var(--border-color);border-radius:8px;padding:10px;display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:start}.pb-candidate-main{min-width:0}.pb-candidate-title{font-weight:650;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.pb-recommended{font-size:10px;border:1px solid var(--border-color);border-radius:999px;padding:1px 5px;color:var(--descrip-text)}.pb-path{font-size:11px;color:var(--descrip-text);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pb-preview{font-size:12px;color:var(--descrip-text);margin-top:6px;white-space:pre-wrap;word-break:break-word;max-height:62px;overflow:hidden}.pb-label{font-size:12px;color:var(--descrip-text);margin-bottom:5px}.pb-field-preview{border:1px solid var(--border-color);background:var(--comfy-input-bg);border-radius:6px;padding:8px;white-space:pre-wrap;word-break:break-word;max-height:110px;overflow:auto}.pb-section{display:flex;flex-direction:column;gap:6px}.pb-settings-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-color)}
   `;
   document.head.appendChild(style);
@@ -358,9 +358,132 @@ function field(labelText, control) {
   const wrap = document.createElement("div"); wrap.className = "pb-section";
   const label = document.createElement("div"); label.className = "pb-label"; label.textContent = labelText; wrap.append(label, control); return wrap;
 }
-function openDialog(titleText) {
+function openInWindowImageViewer(src, title = "") {
+  const overlay = document.createElement("div");
+  overlay.className = "pb-lightbox-overlay";
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "pb-lightbox-close";
+  closeBtn.textContent = "✕";
+  closeBtn.title = "Close (Esc)";
+  const close = () => { overlay.remove(); document.removeEventListener("keydown", onKey); };
+  closeBtn.onclick = close;
+
+  const onKey = (e) => { if (e.key === "Escape") close(); };
+  document.addEventListener("keydown", onKey);
+
+  const isVid = isVideo({ filename: src });
+  const mediaEl = isVid ? document.createElement("video") : document.createElement("img");
+  mediaEl.src = src;
+  mediaEl.style.maxWidth = "92vw";
+  mediaEl.style.maxHeight = "88vh";
+  mediaEl.style.objectFit = "contain";
+  mediaEl.style.borderRadius = "8px";
+  mediaEl.style.boxShadow = "0 8px 32px rgba(0,0,0,0.85)";
+  mediaEl.style.cursor = "default";
+  mediaEl.onclick = (e) => e.stopPropagation();
+  if (isVid) {
+    mediaEl.controls = true;
+    mediaEl.autoplay = true;
+  }
+
+  overlay.append(closeBtn, mediaEl);
+  overlay.onclick = (e) => { if (e.target === overlay) close(); };
+  document.body.appendChild(overlay);
+}
+
+function createMediaCarousel(initialMediaList = []) {
+  const mediaList = [...initialMediaList];
+  const container = document.createElement("div"); container.className = "pb-carousel-container";
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = "image/*,video/*";
+  fileInput.multiple = true;
+  fileInput.style.display = "none";
+
+  function renderItems() {
+    container.innerHTML = "";
+    mediaList.forEach((item, index) => {
+      const tile = document.createElement("div"); tile.className = "pb-carousel-item";
+      const src = mediaUrl(item);
+      const isVid = isVideo(item);
+      const el = isVid ? document.createElement("video") : document.createElement("img");
+      el.src = src;
+      if (isVid) el.muted = true;
+      tile.appendChild(el);
+
+      const delBtn = document.createElement("button");
+      delBtn.className = "pb-carousel-remove";
+      delBtn.textContent = "✕";
+      delBtn.title = "Remove image";
+      delBtn.onclick = (e) => {
+        e.stopPropagation();
+        mediaList.splice(index, 1);
+        renderItems();
+      };
+      tile.appendChild(delBtn);
+      container.appendChild(tile);
+    });
+
+    const addTile = document.createElement("div");
+    addTile.className = "pb-carousel-add";
+    addTile.innerHTML = `<span style="font-size:18px;line-height:1;">＋</span><span>Add</span>`;
+    addTile.onclick = () => fileInput.click();
+    container.append(addTile, fileInput);
+  }
+
+  fileInput.onchange = async () => {
+    const files = Array.from(fileInput.files || []);
+    if (!files.length) return;
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("image", file);
+      try {
+        const resp = await fetch("/upload/image", { method: "POST", body: formData });
+        const res = await resp.json();
+        if (res && res.name) {
+          mediaList.push({
+            filename: res.name,
+            subfolder: res.subfolder || "",
+            type: res.type || "input",
+            media_type: file.type.startsWith("video") ? "video" : "image"
+          });
+        }
+      } catch (err) {
+        notify("error", t("title"), `Upload error: ${err.message}`);
+      }
+    }
+    fileInput.value = "";
+    renderItems();
+  };
+
+  renderItems();
+  return { container, getMediaList: () => mediaList };
+}
+
+function openDialog(titleText, options = {}) {
   const overlay = document.createElement("div"); overlay.className = "pb-overlay";
   const dialog = document.createElement("div"); dialog.className = "pb-dialog";
+  if (options.className) dialog.classList.add(options.className);
+  if (options.resizable) {
+    dialog.classList.add("pb-dialog-resizable");
+    try {
+      const saved = JSON.parse(localStorage.getItem("PromptBookmarks.DialogSize") || "null");
+      if (saved && saved.width && saved.height) {
+        dialog.style.width = `${saved.width}px`;
+        dialog.style.height = `${saved.height}px`;
+      }
+    } catch (_) {}
+
+    new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 280 && height > 280) {
+          localStorage.setItem("PromptBookmarks.DialogSize", JSON.stringify({ width: Math.round(width), height: Math.round(height) }));
+        }
+      }
+    }).observe(dialog);
+  }
   const head = document.createElement("div"); head.className = "pb-dialog-head";
   const title = document.createElement("div"); title.className = "pb-dialog-title"; title.textContent = titleText;
   const x = button("×", () => overlay.remove()); x.style.fontSize = "18px"; head.append(title, x);
@@ -368,7 +491,7 @@ function openDialog(titleText) {
   const foot = document.createElement("div"); foot.className = "pb-dialog-foot";
   dialog.append(head, body, foot); overlay.appendChild(dialog); document.body.appendChild(overlay);
   overlay.addEventListener("mousedown", (event) => { if (event.target === overlay) overlay.remove(); });
-  return { overlay, body, foot };
+  return { overlay, body, foot, dialog };
 }
 
 function activeWorkflowInfo() {
@@ -623,7 +746,12 @@ async function saveCurrentPrompt() {
       showBookmarkConflict({ existing, cleanedName, groupName, groupId, fields, saveDialog: dlg, nameInput: name });
       return;
     }
-    await request("/prompts", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, group_id: groupId, name: cleanedName, fields, notes: "" }) });
+    const created = await request("/prompts", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, group_id: groupId, name: cleanedName, fields, notes: "" }) });
+    if (created && created.id) {
+      for (const m of carousel.getMediaList()) {
+        await request(`/prompts/${encodeURIComponent(created.id)}/media`, { method: "POST", body: JSON.stringify(m) }).catch(() => {});
+      }
+    }
     dlg.overlay.remove(); await loadData(); notify("success", t("promptBookmarked"), cleanedName);
   }));
   setTimeout(() => name.focus(), 0);
@@ -636,10 +764,11 @@ async function manualCreatePrompt() {
     notify("info", t("configure"), t("saveBeforeBookmark"));
     return configureBindings();
   }
-  const dlg = openDialog(t("manualPromptTitle"));
+  const dlg = openDialog(t("manualPromptTitle"), { resizable: true });
   const name = document.createElement("input"); name.className = "pb-input"; name.placeholder = t("bookmarkNamePlaceholder"); name.autofocus = true;
   const group = document.createElement("input"); group.className = "pb-input"; group.placeholder = t("groupPlaceholder");
-  dlg.body.append(field(t("bookmarkName"), name), field(t("groupOptional"), group));
+  const carousel = createMediaCarousel([]);
+  dlg.body.append(field(t("bookmarkName"), name), field(t("groupOptional"), group), field(t("customCover") || "Images / Media", carousel.container));
 
   const fieldsSection = document.createElement("div"); fieldsSection.className = "pb-section";
   const fieldsLabel = document.createElement("div"); fieldsLabel.className = "pb-label"; fieldsLabel.textContent = t("fieldsToSave"); fieldsSection.appendChild(fieldsLabel);
@@ -676,14 +805,19 @@ async function manualCreatePrompt() {
       showBookmarkConflict({ existing, cleanedName, groupName, groupId, fields, saveDialog: dlg, nameInput: name });
       return;
     }
-    await request("/prompts", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, group_id: groupId, name: cleanedName, fields, notes: "" }) });
+    const created = await request("/prompts", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, group_id: groupId, name: cleanedName, fields, notes: "" }) });
+    if (created && created.id) {
+      for (const m of carousel.getMediaList()) {
+        await request(`/prompts/${encodeURIComponent(created.id)}/media`, { method: "POST", body: JSON.stringify(m) }).catch(() => {});
+      }
+    }
     dlg.overlay.remove(); await loadData(); notify("success", t("promptBookmarked"), cleanedName);
   }));
   setTimeout(() => name.focus(), 0);
 }
 
 async function editPrompt(prompt) {
-  const dlg = openDialog(t("editPrompt"));
+  const dlg = openDialog(t("editPrompt"), { resizable: true });
   const name = document.createElement("input"); name.className = "pb-input"; name.value = prompt.name || "";
   const group = document.createElement("input"); group.className = "pb-input"; group.value = prompt.group_name || ""; group.placeholder = t("groupPlaceholder");
   const notes = document.createElement("input"); notes.className = "pb-input"; notes.value = prompt.notes || ""; notes.placeholder = t("notesPlaceholder");
@@ -693,6 +827,12 @@ async function editPrompt(prompt) {
     field(t("groupOptional"), group),
     field(t("notes"), notes),
   );
+
+  const existingMedia = (prompt.media && prompt.media.length)
+    ? prompt.media
+    : (prompt.latest_media ? [prompt.latest_media] : []);
+  const carousel = createMediaCarousel(existingMedia);
+  dlg.body.append(field(t("customCover") || "Images / Media", carousel.container));
 
   const fieldsSection = document.createElement("div"); fieldsSection.className = "pb-section";
   const fieldsLabel = document.createElement("div"); fieldsLabel.className = "pb-label"; fieldsLabel.textContent = t("fieldsToSave"); fieldsSection.appendChild(fieldsLabel);
@@ -707,29 +847,6 @@ async function editPrompt(prompt) {
     textareas.push({ field: f, textarea: txt });
   }
   dlg.body.appendChild(fieldsSection);
-
-  const coverWrap = document.createElement("div"); coverWrap.className = "pb-section";
-  const coverLabel = document.createElement("div"); coverLabel.className = "pb-label"; coverLabel.textContent = t("customCover");
-  const coverInput = document.createElement("input"); coverInput.type = "file"; coverInput.accept = "image/*"; coverInput.style.display = "none";
-  let uploadedMedia = null;
-  const uploadBtn = button(t("uploadCover"), () => coverInput.click());
-  coverInput.onchange = async () => {
-    const file = coverInput.files?.[0]; if (!file) return;
-    const formData = new FormData(); formData.append("image", file);
-    uploadBtn.textContent = "⏳ Uploading...";
-    try {
-      const resp = await fetch("/upload/image", { method: "POST", body: formData });
-      const res = await resp.json();
-      if (res && res.name) {
-        uploadedMedia = { filename: res.name, subfolder: res.subfolder || "", type: res.type || "input" };
-        uploadBtn.textContent = `✅ ${res.name}`;
-      }
-    } catch (_) {
-      uploadBtn.textContent = "❌ Upload failed";
-    }
-  };
-  coverWrap.append(coverLabel, uploadBtn, coverInput);
-  dlg.body.appendChild(coverWrap);
 
   dlg.foot.append(button(t("cancel"), () => dlg.overlay.remove()), button(t("saveChanges"), async () => {
     const cleanedName = name.value.trim(); if (!cleanedName) { name.focus(); return; }
@@ -752,11 +869,13 @@ async function editPrompt(prompt) {
         fields: updatedFields,
       }),
     });
-    if (uploadedMedia) {
-      await request(`/prompts/${encodeURIComponent(prompt.id)}/media`, {
-        method: "POST",
-        body: JSON.stringify(uploadedMedia),
-      });
+    for (const m of carousel.getMediaList()) {
+      if (!m.id) {
+        await request(`/prompts/${encodeURIComponent(prompt.id)}/media`, {
+          method: "POST",
+          body: JSON.stringify(m),
+        }).catch(() => {});
+      }
     }
     dlg.overlay.remove(); await loadData(); notify("success", t("promptUpdated"), cleanedName);
   }));
@@ -947,7 +1066,7 @@ async function openUnlockDialog(onDone) {
 }
 
 async function showSettings() {
-  const dlg = openDialog(t("settings"));
+  const dlg = openDialog(t("settings"), { className: "pb-dialog-settings" });
   const languageRow = document.createElement("div"); languageRow.className = "pb-settings-row";
   const languageText = document.createElement("div"); languageText.textContent = t("language");
   const languageSelect = document.createElement("select"); languageSelect.className = "pb-select";
@@ -1041,8 +1160,7 @@ function renderCard(prompt) {
     media.title = t("viewFullscreen");
     media.onclick = (e) => {
       e.stopPropagation();
-      if (typeof app.openImage === "function") app.openImage(src);
-      else window.open(src, "_blank");
+      openInWindowImageViewer(src, prompt.name);
     };
     card.appendChild(media);
   }
