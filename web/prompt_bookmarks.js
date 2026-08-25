@@ -100,14 +100,34 @@ const I18N = {
     sortCreated: "最近收藏",
     sortName: "名称",
     sortUsed: "使用次数",
-    backup: "备份",
-    exportBackup: "导出备份",
-    importBackup: "导入备份",
+    backup: "备份与恢复",
+    exportBackup: "导出 JSON",
+    importBackup: "导入 JSON",
+    exportDb: "导出数据库 (.db)",
+    importDb: "恢复数据库 (.db)",
+    importDbConfirm: "恢复 SQLite 数据库？现有的数据库文件将被覆盖并备份为 .db.bak。",
+    dbImported: "数据库文件已成功恢复",
     dbLocation: "本地数据库文件: user/prompt_bookmarks/prompt_bookmarks.db",
     backupExported: "备份已导出",
     backupImported: "备份已成功导入",
     importBackupConfirm: "导入备份？同 ID 的收藏会更新，其他现有数据会保留。",
     invalidBackup: "备份文件无效",
+    encryption: "密码保护与加密",
+    encryptionStatus: "当前状态",
+    statusEncrypted: "🔒 已加密 (AES-256-GCM)",
+    statusUnencrypted: "🔓 未加密 (明文)",
+    enableEncryption: "开启密码加密",
+    disableEncryption: "关闭密码保护 (解密)",
+    unlockDatabase: "输入密码解锁",
+    lockDatabase: "立即锁定",
+    enterPassword: "输入密码",
+    confirmPassword: "确认密码",
+    passwordWarning: "⚠️ 重要提示: 您的密码绝不会保存在磁盘上或上传到任何地方。如果您遗忘了密码，所有已加密的提示词将无法恢复！",
+    passwordMismatch: "两次输入的密码不一致",
+    passwordTooShort: "密码长度至少需 4 位",
+    encryptionEnabledSuccess: "加密成功开启",
+    encryptionDisabledSuccess: "密码保护已关闭，数据已解密",
+    unlockedSuccess: "数据库已成功解锁",
     previewAutoplay: "视频预览自动播放",
     workflow: "工作流",
     openWorkflow: "打开一个工作流后即可使用提示词收藏。",
@@ -203,14 +223,34 @@ const I18N = {
     sortCreated: "Recently saved",
     sortName: "Name",
     sortUsed: "Most used",
-    backup: "Backup",
-    exportBackup: "Export Backup",
-    importBackup: "Import Backup",
+    backup: "Backup & Restore",
+    exportBackup: "Export JSON",
+    importBackup: "Import JSON",
+    exportDb: "Export Database (.db)",
+    importDb: "Restore Database (.db)",
+    importDbConfirm: "Restore SQLite database? Current database file will be replaced and backed up as .db.bak.",
+    dbImported: "Database file restored successfully",
     dbLocation: "Local database file: user/prompt_bookmarks/prompt_bookmarks.db",
     backupExported: "Backup exported",
     backupImported: "Backup imported successfully",
     importBackupConfirm: "Import this backup? Matching bookmark IDs will be updated and other existing data will be kept.",
     invalidBackup: "Invalid backup file",
+    encryption: "Password Protection & Encryption",
+    encryptionStatus: "Current Status",
+    statusEncrypted: "🔒 Encrypted (AES-256-GCM)",
+    statusUnencrypted: "🔓 Unencrypted (Plaintext)",
+    enableEncryption: "Enable Password Encryption",
+    disableEncryption: "Disable Encryption (Decrypt)",
+    unlockDatabase: "Unlock with Password",
+    lockDatabase: "Lock Now",
+    enterPassword: "Enter Password",
+    confirmPassword: "Confirm Password",
+    passwordWarning: "⚠️ Important: Your password is NEVER stored on disk or sent anywhere. If you forget your password, your encrypted prompts cannot be recovered!",
+    passwordMismatch: "Passwords do not match",
+    passwordTooShort: "Password must be at least 4 characters",
+    encryptionEnabledSuccess: "Encryption enabled successfully",
+    encryptionDisabledSuccess: "Encryption disabled and database decrypted",
+    unlockedSuccess: "Database unlocked successfully",
     previewAutoplay: "Autoplay video previews",
     workflow: "Workflow",
     openWorkflow: "Open a workflow to start using Prompt Bookmarks.",
@@ -813,7 +853,94 @@ async function importBackup() {
   input.click();
 }
 
-function showSettings() {
+function exportDbFile() {
+  window.open("/prompt-bookmarks/db/file", "_blank");
+  notify("success", t("backupExported"));
+}
+function importDbFile() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".db,application/octet-stream";
+  input.onchange = async () => {
+    const file = input.files?.[0]; if (!file) return;
+    if (!window.confirm(t("importDbConfirm"))) return;
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const resp = await fetch("/prompt-bookmarks/db/file", { method: "POST", body: formData });
+      const data = await resp.json();
+      if (data && data.ok) {
+        notify("success", t("dbImported"));
+        if (state.workflow) await loadData(); else await loadPrompts();
+      } else {
+        throw new Error(data?.error || "Failed to restore database");
+      }
+    } catch (err) {
+      notify("error", t("title"), String(err?.message || err));
+    }
+  };
+  input.click();
+}
+
+async function openEnableEncryptionDialog(onDone) {
+  const dlg = openDialog(t("enableEncryption"));
+  const warn = document.createElement("div"); warn.className = "pb-help"; warn.style.color = "#fbbf24"; warn.style.fontWeight = "bold"; warn.style.marginBottom = "10px"; warn.textContent = t("passwordWarning");
+  const pass1 = document.createElement("input"); pass1.type = "password"; pass1.className = "pb-input"; pass1.placeholder = t("enterPassword");
+  const pass2 = document.createElement("input"); pass2.type = "password"; pass2.className = "pb-input"; pass2.placeholder = t("confirmPassword");
+  dlg.body.append(warn, field(t("enterPassword"), pass1), field(t("confirmPassword"), pass2));
+  dlg.foot.append(button(t("cancel"), () => dlg.overlay.remove()), button(t("saveChanges"), async () => {
+    const p1 = pass1.value; const p2 = pass2.value;
+    if (!p1 || p1.length < 4) { alert(t("passwordTooShort")); pass1.focus(); return; }
+    if (p1 !== p2) { alert(t("passwordMismatch")); pass2.focus(); return; }
+    try {
+      await request("/encryption/enable", { method: "POST", body: JSON.stringify({ password: p1, algorithm: "AES-256-GCM" }) });
+      dlg.overlay.remove();
+      notify("success", t("encryptionEnabledSuccess"));
+      if (onDone) onDone();
+      await loadPrompts();
+    } catch (err) {
+      alert(String(err?.message || err));
+    }
+  }));
+}
+
+async function openDisableEncryptionDialog(onDone) {
+  const dlg = openDialog(t("disableEncryption"));
+  const pass = document.createElement("input"); pass.type = "password"; pass.className = "pb-input"; pass.placeholder = t("enterPassword");
+  dlg.body.append(field(t("enterPassword"), pass));
+  dlg.foot.append(button(t("cancel"), () => dlg.overlay.remove()), button(t("disableEncryption"), async () => {
+    const p = pass.value; if (!p) { pass.focus(); return; }
+    try {
+      await request("/encryption/disable", { method: "POST", body: JSON.stringify({ password: p }) });
+      dlg.overlay.remove();
+      notify("success", t("encryptionDisabledSuccess"));
+      if (onDone) onDone();
+      await loadPrompts();
+    } catch (err) {
+      alert(String(err?.message || err));
+    }
+  }));
+}
+
+async function openUnlockDialog(onDone) {
+  const dlg = openDialog(t("unlockDatabase"));
+  const pass = document.createElement("input"); pass.type = "password"; pass.className = "pb-input"; pass.placeholder = t("enterPassword");
+  dlg.body.append(field(t("enterPassword"), pass));
+  dlg.foot.append(button(t("cancel"), () => dlg.overlay.remove()), button(t("unlockDatabase"), async () => {
+    const p = pass.value; if (!p) { pass.focus(); return; }
+    try {
+      await request("/encryption/unlock", { method: "POST", body: JSON.stringify({ password: p }) });
+      dlg.overlay.remove();
+      notify("success", t("unlockedSuccess"));
+      if (onDone) onDone();
+      await loadPrompts();
+    } catch (err) {
+      alert(String(err?.message || err));
+    }
+  }));
+}
+
+async function showSettings() {
   const dlg = openDialog(t("settings"));
   const languageRow = document.createElement("div"); languageRow.className = "pb-settings-row";
   const languageText = document.createElement("div"); languageText.textContent = t("language");
@@ -846,10 +973,38 @@ function showSettings() {
   autoplay.onchange = async () => { await app.extensionManager?.setting?.set?.(AUTOPLAY_SETTING, autoplay.checked); window.dispatchEvent(new CustomEvent("prompt-bookmarks-autoplay-changed")); };
   autoplayRow.append(autoplayText, autoplay); dlg.body.appendChild(autoplayRow);
 
+  // Encryption status & controls
+  const encStatus = await request("/encryption/status").catch(() => ({ enabled: false, unlocked: true }));
+  const encRow = document.createElement("div"); encRow.className = "pb-settings-row";
+  const encInfo = document.createElement("div");
+  encInfo.innerHTML = `<div>${t("encryption")}</div><div class="pb-help">${encStatus.enabled ? t("statusEncrypted") : t("statusUnencrypted")}</div>`;
+  const encActions = document.createElement("div"); encActions.className = "pb-row"; encActions.style.gap = "4px";
+  if (!encStatus.enabled) {
+    encActions.appendChild(button(t("enableEncryption"), () => { dlg.overlay.remove(); openEnableEncryptionDialog(showSettings); }));
+  } else if (!encStatus.unlocked) {
+    encActions.append(
+      button(t("unlockDatabase"), () => { dlg.overlay.remove(); openUnlockDialog(showSettings); }),
+      button(t("disableEncryption"), () => { dlg.overlay.remove(); openDisableEncryptionDialog(showSettings); }, "pb-danger")
+    );
+  } else {
+    encActions.append(
+      button(t("lockDatabase"), async () => { await request("/encryption/lock", { method: "POST" }); dlg.overlay.remove(); showSettings(); await loadPrompts(); }),
+      button(t("disableEncryption"), () => { dlg.overlay.remove(); openDisableEncryptionDialog(showSettings); }, "pb-danger")
+    );
+  }
+  encRow.append(encInfo, encActions);
+  dlg.body.appendChild(encRow);
+
+  // Backup & Restore
   const backupRow = document.createElement("div"); backupRow.className = "pb-settings-row";
   const backupText = document.createElement("div"); backupText.textContent = t("backup");
-  const backupActions = document.createElement("div"); backupActions.className = "pb-row";
-  backupActions.append(button(t("exportBackup"), exportBackup), button(t("importBackup"), importBackup));
+  const backupActions = document.createElement("div"); backupActions.className = "pb-row"; backupActions.style.gap = "4px";
+  backupActions.append(
+    button(t("exportBackup"), exportBackup),
+    button(t("importBackup"), importBackup),
+    button(t("exportDb"), exportDbFile),
+    button(t("importDb"), importDbFile)
+  );
   backupRow.append(backupText, backupActions); dlg.body.appendChild(backupRow);
 
   const dbNote = document.createElement("div"); dbNote.className = "pb-help"; dbNote.textContent = t("dbLocation"); dlg.body.appendChild(dbNote);

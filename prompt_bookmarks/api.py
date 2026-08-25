@@ -277,3 +277,82 @@ def register_routes() -> None:
         except Exception:
             LOGGER.exception("Failed to link media")
             return _error("Failed to link media", 500)
+
+    @routes.get("/prompt-bookmarks/encryption/status")
+    async def encryption_status(request: web.Request) -> web.Response:
+        return _ok(get_db().get_encryption_status())
+
+    @routes.post("/prompt-bookmarks/encryption/unlock")
+    async def encryption_unlock(request: web.Request) -> web.Response:
+        try:
+            data = await _json(request)
+            password = str(data.get("password", ""))
+            unlocked = get_db().unlock_session(password)
+            if not unlocked:
+                return _error("Incorrect password", 401)
+            return _ok({"unlocked": True})
+        except Exception as exc:
+            return _error(str(exc))
+
+    @routes.post("/prompt-bookmarks/encryption/lock")
+    async def encryption_lock(request: web.Request) -> web.Response:
+        get_db().lock_session()
+        return _ok({"unlocked": False})
+
+    @routes.post("/prompt-bookmarks/encryption/enable")
+    async def encryption_enable(request: web.Request) -> web.Response:
+        try:
+            data = await _json(request)
+            password = str(data.get("password", ""))
+            algorithm = str(data.get("algorithm", "AES-256-GCM"))
+            res = get_db().enable_encryption(password, algorithm)
+            return _ok(res)
+        except Exception as exc:
+            return _error(str(exc))
+
+    @routes.post("/prompt-bookmarks/encryption/disable")
+    async def encryption_disable(request: web.Request) -> web.Response:
+        try:
+            data = await _json(request)
+            password = str(data.get("password", ""))
+            res = get_db().disable_encryption(password)
+            return _ok(res)
+        except Exception as exc:
+            return _error(str(exc))
+
+    @routes.get("/prompt-bookmarks/db/file")
+    async def db_file_download(request: web.Request) -> web.Response:
+        db_path = get_db_path()
+        if not db_path.exists():
+            return _error("Database file not found", 404)
+        return web.FileResponse(
+            db_path,
+            headers={"Content-Disposition": 'attachment; filename="prompt_bookmarks.db"'}
+        )
+
+    @routes.post("/prompt-bookmarks/db/file")
+    async def db_file_upload(request: web.Request) -> web.Response:
+        try:
+            reader = await request.multipart()
+            field = await reader.next()
+            if not field:
+                return _error("No file uploaded")
+            db_path = get_db_path()
+            db_path.parent.mkdir(parents=True, exist_ok=True)
+            # Create backup of current DB before replacing
+            if db_path.exists():
+                bak_path = db_path.with_suffix(".db.bak")
+                import shutil
+                shutil.copy2(db_path, bak_path)
+            with open(db_path, "wb") as f:
+                while True:
+                    chunk = await field.read_chunk()
+                    if not chunk:
+                        break
+                    f.write(chunk)
+            global _DB
+            _DB = None  # Reload DB instance
+            return _ok({"status": "ok", "message": "Database successfully restored"})
+        except Exception as exc:
+            LOGGER.exception("Failed to restore database file")
+            return _error(f"Failed to restore database file: {exc}", 500)
