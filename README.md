@@ -52,6 +52,8 @@ If you are searching for a **ComfyUI prompt manager**, **prompt library**, **pro
 - Normal ComfyUI group path display
 - Supports editable text widgets exposed by Group Nodes / Subgraphs
 - More resilient exposed-field matching when node IDs change, while avoiding ambiguous guesses
+- Manual prompt creation dialog allowing free text input for configured fields
+- External `prompt-bookmarks-create` window event API for third-party integration
 - Save multiple fields as one bookmark, such as:
   - main prompt
   - motion/camera prompt

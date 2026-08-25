@@ -57,6 +57,9 @@ const I18N = {
     groupPlaceholder: "例如：人物 / 运镜 / 产品",
     fieldsToSave: "将收藏以下字段",
     createBookmark: "收藏",
+    manualPrompt: "手动创建",
+    manualPromptDesc: "直接输入文本创建提示词收藏",
+    manualPromptTitle: "手动创建提示词",
     promptBookmarked: "已收藏提示词",
     duplicatePromptTitle: "已存在同名收藏",
     duplicatePromptDetail: "分组“{group}”中已经有“{name}”。请选择覆盖原收藏，或返回修改名称。",
@@ -143,6 +146,9 @@ const I18N = {
     groupPlaceholder: "e.g. Character / Camera / Product",
     fieldsToSave: "Fields to save",
     createBookmark: "Save",
+    manualPrompt: "Add Prompt",
+    manualPromptDesc: "Create prompt bookmark with custom text",
+    manualPromptTitle: "Add Prompt Bookmark",
     promptBookmarked: "Prompt bookmarked",
     duplicatePromptTitle: "Bookmark already exists",
     duplicatePromptDetail: "“{name}” already exists in “{group}”. Choose Overwrite to update it, or go back and change the name.",
@@ -488,6 +494,189 @@ function showBookmarkConflict({ existing, cleanedName, groupName, groupId, field
   );
 }
 
+
+async function manualCreatePrompt() {
+  if (!state.workflow) return;
+  const bindings = state.bindings;
+  if (!bindings.length) {
+    notify("info", t("configure"), t("missingConfiguredFields"));
+    return configureBindings();
+  }
+  const dlg = openDialog(t("manualPromptTitle"));
+  const name = document.createElement("input");
+  name.className = "pb-input";
+  name.placeholder = t("bookmarkNamePlaceholder");
+  name.autofocus = true;
+
+  const group = document.createElement("input");
+  group.className = "pb-input";
+  group.placeholder = t("groupPlaceholder");
+
+  dlg.body.append(field(t("bookmarkName"), name), field(t("groupOptional"), group));
+
+  const fieldsSection = document.createElement("div");
+  fieldsSection.className = "pb-section";
+  const fieldsLabel = document.createElement("div");
+  fieldsLabel.className = "pb-label";
+  fieldsLabel.textContent = t("fieldsToSave");
+  fieldsSection.appendChild(fieldsLabel);
+
+  const textareas = [];
+  for (const b of bindings) {
+    const wrap = document.createElement("div");
+    wrap.style.display = "flex";
+    wrap.style.flexDirection = "column";
+    wrap.style.gap = "4px";
+    wrap.style.marginBottom = "8px";
+    const lbl = document.createElement("div");
+    lbl.className = "pb-label";
+    lbl.style.fontSize = "11px";
+    lbl.textContent = b.label || b.widget_name;
+    const txt = document.createElement("textarea");
+    txt.className = "pb-input";
+    txt.placeholder = b.widget_name;
+    txt.style.minHeight = "60px";
+    txt.style.resize = "vertical";
+    wrap.append(lbl, txt);
+    fieldsSection.appendChild(wrap);
+    textareas.push({ binding: b, textarea: txt });
+  }
+  dlg.body.appendChild(fieldsSection);
+
+  dlg.foot.append(
+    button(t("cancel"), () => dlg.overlay.remove()),
+    button(t("createBookmark"), async () => {
+      const cleanedName = name.value.trim();
+      if (!cleanedName) { name.focus(); return; }
+      const groupName = group.value.trim();
+      let groupId = null;
+      if (groupName) {
+        let found = state.groups.find((g) => g.name.toLowerCase() === groupName.toLowerCase());
+        if (!found) found = await request("/groups", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, name: groupName }) });
+        groupId = found.id;
+      }
+      const fields = textareas.map((item) => ({
+        node_id: String(item.binding.node_id),
+        node_type: String(item.binding.node_type || ""),
+        widget_name: String(item.binding.widget_name),
+        binding_key: String(item.binding.binding_key || ""),
+        label: String(item.binding.label || item.binding.widget_name),
+        value: item.textarea.value,
+      }));
+      const existing = await findBookmarkConflict(cleanedName, groupId);
+      if (existing) {
+        showBookmarkConflict({ existing, cleanedName, groupName, groupId, fields, saveDialog: dlg, nameInput: name });
+        return;
+      }
+      await request("/prompts", {
+        method: "POST",
+        body: JSON.stringify({ workflow_id: state.workflow.id, group_id: groupId, name: cleanedName, fields, notes: "" }),
+      });
+      dlg.overlay.remove();
+      await loadData();
+      notify("success", t("promptBookmarked"), cleanedName);
+    })
+  );
+  setTimeout(() => name.focus(), 0);
+}
+
+async function openExternalSaveDialog(detail = {}) {
+  if (!state.workflow) {
+    notify("warn", t("title"), t("openWorkflow"));
+    return;
+  }
+  let bindings = state.bindings;
+  if (!bindings || !bindings.length) {
+    bindings = [{
+      node_id: "0",
+      node_type: "CLIPTextEncode",
+      widget_name: "text",
+      binding_key: "prompt",
+      label: "POSITIVE PROMPT · text"
+    }];
+  }
+
+  const dlg = openDialog(t("manualPromptTitle"));
+  const name = document.createElement("input");
+  name.className = "pb-input";
+  name.placeholder = t("bookmarkNamePlaceholder");
+  name.value = detail.name || "";
+
+  const group = document.createElement("input");
+  group.className = "pb-input";
+  group.placeholder = t("groupPlaceholder");
+  group.value = detail.group || "";
+
+  dlg.body.append(field(t("bookmarkName"), name), field(t("groupOptional"), group));
+
+  const fieldsSection = document.createElement("div");
+  fieldsSection.className = "pb-section";
+  const fieldsLabel = document.createElement("div");
+  fieldsLabel.className = "pb-label";
+  fieldsLabel.textContent = t("fieldsToSave");
+  fieldsSection.appendChild(fieldsLabel);
+
+  const textareas = [];
+  for (let i = 0; i < bindings.length; i++) {
+    const b = bindings[i];
+    const wrap = document.createElement("div");
+    wrap.style.display = "flex";
+    wrap.style.flexDirection = "column";
+    wrap.style.gap = "4px";
+    wrap.style.marginBottom = "8px";
+    const lbl = document.createElement("div");
+    lbl.className = "pb-label";
+    lbl.style.fontSize = "11px";
+    lbl.textContent = b.label || b.widget_name;
+    const txt = document.createElement("textarea");
+    txt.className = "pb-input";
+    txt.placeholder = b.widget_name;
+    txt.style.minHeight = "60px";
+    txt.style.resize = "vertical";
+    if (i === 0 && detail.text) txt.value = detail.text;
+    wrap.append(lbl, txt);
+    fieldsSection.appendChild(wrap);
+    textareas.push({ binding: b, textarea: txt });
+  }
+  dlg.body.appendChild(fieldsSection);
+
+  dlg.foot.append(
+    button(t("cancel"), () => dlg.overlay.remove()),
+    button(t("createBookmark"), async () => {
+      const cleanedName = name.value.trim();
+      if (!cleanedName) { name.focus(); return; }
+      const groupName = group.value.trim();
+      let groupId = null;
+      if (groupName) {
+        let found = state.groups.find((g) => g.name.toLowerCase() === groupName.toLowerCase());
+        if (!found) found = await request("/groups", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, name: groupName }) });
+        groupId = found.id;
+      }
+      const fields = textareas.map((item) => ({
+        node_id: String(item.binding.node_id),
+        node_type: String(item.binding.node_type || ""),
+        widget_name: String(item.binding.widget_name),
+        binding_key: String(item.binding.binding_key || ""),
+        label: String(item.binding.label || item.binding.widget_name),
+        value: item.textarea.value,
+      }));
+      const existing = await findBookmarkConflict(cleanedName, groupId);
+      if (existing) {
+        showBookmarkConflict({ existing, cleanedName, groupName, groupId, fields, saveDialog: dlg, nameInput: name });
+        return;
+      }
+      await request("/prompts", {
+        method: "POST",
+        body: JSON.stringify({ workflow_id: state.workflow.id, group_id: groupId, name: cleanedName, fields, notes: "" }),
+      });
+      dlg.overlay.remove();
+      await loadData();
+      notify("success", t("promptBookmarked"), cleanedName);
+    })
+  );
+  setTimeout(() => { if (!name.value) name.focus(); }, 0);
+}
+
 async function saveCurrentPrompt() {
   if (!state.workflow) return;
   const fields = collectCurrentFields();
@@ -751,7 +940,11 @@ function render() {
   const search = document.createElement("input"); search.className = "pb-search"; search.placeholder = t("search"); search.value = state.search; let timer;
   search.oninput = () => { state.search = search.value; clearTimeout(timer); timer = setTimeout(() => loadPrompts().catch(console.error), 220); }; head.appendChild(search);
   renderGroupFilters(head);
-  const save = button(t("saveCurrent"), saveCurrentPrompt); save.disabled = !state.workflow; head.appendChild(save); state.root.appendChild(head);
+  const btnRow = document.createElement("div"); btnRow.style.display = "flex"; btnRow.style.gap = "6px";
+  const save = button(t("saveCurrent"), saveCurrentPrompt); save.disabled = !state.workflow; save.style.flex = "1";
+  const manual = button(t("manualPrompt"), manualCreatePrompt); manual.disabled = !state.workflow; manual.title = t("manualPromptDesc");
+  btnRow.append(save, manual);
+  head.appendChild(btnRow); state.root.appendChild(head);
   const body = document.createElement("div"); body.className = "pb-body";
   if (!state.workflow && !state.allMode) { const e = document.createElement("div"); e.className = "pb-empty"; e.textContent = t("openWorkflow"); body.appendChild(e); }
   else if ((!state.bindings.length || !collectCurrentFields().length) && !state.allMode) {
@@ -933,5 +1126,6 @@ app.registerExtension({
     refreshExtensionLabels();
     syncActiveWorkflow(true).catch(console.error); state.syncTimer ||= setInterval(() => syncActiveWorkflow(false).catch(console.error), 750);
     api.addEventListener("execution_success", (event) => { if (settingGet(AUTOLINK_SETTING, true) !== false) onExecutionSuccess(event); });
+    window.addEventListener("prompt-bookmarks-create", (event) => { openExternalSaveDialog(event.detail || {}); });
   },
 });
