@@ -752,9 +752,10 @@ async function saveCurrentPrompt() {
     }
     const created = await request("/prompts", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, group_id: groupId, name: cleanedName, fields, notes: "" }) });
     if (created && created.id) {
-      for (const m of carousel.getMediaList()) {
-        await request(`/prompts/${encodeURIComponent(created.id)}/media`, { method: "POST", body: JSON.stringify(m) }).catch(() => {});
-      }
+      await request(`/prompts/${encodeURIComponent(created.id)}/media`, {
+        method: "PUT",
+        body: JSON.stringify({ media: carousel.getMediaList() }),
+      }).catch(console.error);
     }
     dlg.overlay.remove(); await loadData(); notify("success", t("promptBookmarked"), cleanedName);
   }));
@@ -811,9 +812,10 @@ async function manualCreatePrompt() {
     }
     const created = await request("/prompts", { method: "POST", body: JSON.stringify({ workflow_id: state.workflow.id, group_id: groupId, name: cleanedName, fields, notes: "" }) });
     if (created && created.id) {
-      for (const m of carousel.getMediaList()) {
-        await request(`/prompts/${encodeURIComponent(created.id)}/media`, { method: "POST", body: JSON.stringify(m) }).catch(() => {});
-      }
+      await request(`/prompts/${encodeURIComponent(created.id)}/media`, {
+        method: "PUT",
+        body: JSON.stringify({ media: carousel.getMediaList() }),
+      }).catch(console.error);
     }
     dlg.overlay.remove(); await loadData(); notify("success", t("promptBookmarked"), cleanedName);
   }));
@@ -873,14 +875,10 @@ async function editPrompt(prompt) {
         fields: updatedFields,
       }),
     });
-    for (const m of carousel.getMediaList()) {
-      if (!m.id) {
-        await request(`/prompts/${encodeURIComponent(prompt.id)}/media`, {
-          method: "POST",
-          body: JSON.stringify(m),
-        }).catch(() => {});
-      }
-    }
+    await request(`/prompts/${encodeURIComponent(prompt.id)}/media`, {
+      method: "PUT",
+      body: JSON.stringify({ media: carousel.getMediaList() }),
+    }).catch(console.error);
     dlg.overlay.remove(); await loadData(); notify("success", t("promptUpdated"), cleanedName);
   }));
 }

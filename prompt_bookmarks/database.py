@@ -328,6 +328,16 @@ class PromptBookmarksDB:
         sql = f"""
             SELECT p.*, g.name AS group_name, w.name AS workflow_name, w.path AS workflow_path,
                    (SELECT COUNT(*) FROM prompt_media pm WHERE pm.prompt_id=p.id) AS media_count,
+                   (SELECT json_group_array(
+                        json_object(
+                            'id', id,
+                            'filename', filename,
+                            'subfolder', subfolder,
+                            'type', type,
+                            'media_type', media_type,
+                            'prompt_execution_id', prompt_execution_id
+                        )
+                    ) FROM prompt_media WHERE prompt_id=p.id) AS media_list_json,
                    (SELECT json_object(
                         'id', pm2.id,
                         'filename', pm2.filename,
@@ -462,8 +472,10 @@ class PromptBookmarksDB:
         else:
             row["fields"] = json.loads(raw_fields)
             row["is_locked"] = False
+        media_list_raw = row.pop("media_list_json", None)
+        row["media"] = json.loads(media_list_raw) if media_list_raw else []
         latest = row.pop("latest_media_json", None)
-        row["latest_media"] = json.loads(latest) if latest else None
+        row["latest_media"] = json.loads(latest) if latest else (row["media"][0] if row["media"] else None)
         return row
 
     def get_prompt(self, prompt_id: str) -> dict[str, Any] | None:
@@ -472,6 +484,16 @@ class PromptBookmarksDB:
                 """
                 SELECT p.*, g.name AS group_name, w.name AS workflow_name, w.path AS workflow_path,
                        (SELECT COUNT(*) FROM prompt_media pm WHERE pm.prompt_id=p.id) AS media_count,
+                       (SELECT json_group_array(
+                            json_object(
+                                'id', id,
+                                'filename', filename,
+                                'subfolder', subfolder,
+                                'type', type,
+                                'media_type', media_type,
+                                'prompt_execution_id', prompt_execution_id
+                            )
+                        ) FROM prompt_media WHERE prompt_id=p.id) AS media_list_json,
                        (SELECT json_object(
                             'id', pm2.id,
                             'filename', pm2.filename,
@@ -585,6 +607,33 @@ class PromptBookmarksDB:
                 "UPDATE prompts SET last_used_at=?, use_count=use_count+1 WHERE id=?",
                 (utc_now(), prompt_id),
             )
+
+    def replace_prompt_media(
+        self,
+        prompt_id: str,
+        media_list: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        if not prompt_id:
+            return []
+        now = utc_now()
+        with self._lock, self._conn() as conn:
+            conn.execute("DELETE FROM prompt_media WHERE prompt_id=?", (prompt_id,))
+            for item in media_list:
+                filename = str(item.get("filename", "")).strip()
+                if not filename:
+                    continue
+                subfolder = str(item.get("subfolder", ""))
+                storage_type = str(item.get("type", "input"))
+                media_type = str(item.get("media_type", "image"))
+                conn.execute(
+                    """
+                    INSERT INTO prompt_media(
+                        prompt_id, prompt_execution_id, filename, subfolder, type, media_type, created_at
+                    ) VALUES(?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (prompt_id, "manual", filename, subfolder, storage_type, media_type, now),
+                )
+        return self.list_media(prompt_id)
 
     def list_media(self, prompt_id: str) -> list[dict[str, Any]]:
         with self._lock, self._conn() as conn:

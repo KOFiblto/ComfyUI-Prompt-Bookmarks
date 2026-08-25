@@ -229,6 +229,20 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(media_list[0]["filename"], "custom_cover.png")
         self.assertEqual(media_list[0]["subfolder"], "custom")
 
+    def test_multi_media_replace_and_get(self):
+        prompt = self.db.create_prompt(self.workflow_id, "Multi Cover Test", self.fields())
+        items = [
+            {"filename": "img1.png", "subfolder": "sub1", "type": "output", "media_type": "image"},
+            {"filename": "img2.png", "subfolder": "sub2", "type": "output", "media_type": "image"},
+        ]
+        updated = self.db.replace_prompt_media(prompt["id"], items)
+        self.assertEqual(len(updated), 2)
+        loaded = self.db.get_prompt(prompt["id"])
+        self.assertEqual(len(loaded["media"]), 2)
+        filenames = [m["filename"] for m in loaded["media"]]
+        self.assertIn("img1.png", filenames)
+        self.assertIn("img2.png", filenames)
+
     def test_database_encryption_lifecycle(self):
         prompt = self.db.create_prompt(self.workflow_id, "Secret Prompt", self.fields("A top secret prompt"))
         self.assertFalse(self.db.is_encrypted())
