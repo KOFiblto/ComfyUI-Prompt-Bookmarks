@@ -235,6 +235,23 @@ def register_routes() -> None:
         get_db().mark_used(request.match_info["prompt_id"])
         return _ok()
 
+
+    @routes.put("/prompt-bookmarks/prompts/{prompt_id}/media")
+    async def prompt_media_put(request: web.Request) -> web.Response:
+        try:
+            data = await _json(request)
+            prompt_id = request.match_info["prompt_id"]
+            media = data.get("media", [])
+            if not isinstance(media, list):
+                return _error("media must be an array")
+            updated = get_db().replace_prompt_media(prompt_id, media)
+            return _ok(updated)
+        except ValueError as exc:
+            return _error(str(exc))
+        except Exception:
+            LOGGER.exception("Failed to update media")
+            return _error("Failed to update media", 500)
+
     @routes.get("/prompt-bookmarks/prompts/{prompt_id}/media")
     async def prompt_media_get(request: web.Request) -> web.Response:
         return _ok(get_db().list_media(request.match_info["prompt_id"]))
