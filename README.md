@@ -141,6 +141,11 @@ Media files are **not copied** into the plugin database. Prompt Bookmarks stores
 
 Common image outputs are supported, plus MP4, WebM, MOV, MKV, and M4V when the output exposes ComfyUI-style file metadata. Video sources are loaded lazily near the visible sidebar area, and muted autoplay can be enabled from settings.
 
+## Database Backup & Export
+
+- **JSON Backup** — portable merge-friendly JSON export/import.
+- **Raw Database (.db) Backup** — direct export and restore of the SQLite database file from settings.
+
 ## JSON backup
 
 The sidebar settings include **Export JSON** and **Import JSON**.

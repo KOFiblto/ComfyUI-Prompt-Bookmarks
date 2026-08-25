@@ -71,6 +71,43 @@ def register_routes() -> None:
     async def backup_get(_request: web.Request) -> web.Response:
         return _ok(get_db().export_backup())
 
+
+    @routes.get("/prompt-bookmarks/db/export")
+    async def db_export(_request: web.Request) -> web.Response:
+        db_file = get_db_path()
+        if not db_file.exists():
+            return _error("Database file not found", 404)
+        return web.FileResponse(db_file, headers={"Content-Disposition": f'attachment; filename="prompt_bookmarks.db"'})
+
+    @routes.post("/prompt-bookmarks/db/import")
+    async def db_import(request: web.Request) -> web.Response:
+        try:
+            reader = await request.multipart()
+            field = await reader.next()
+            if field is None:
+                return _error("No file uploaded")
+            db_file = get_db_path()
+            db_file.parent.mkdir(parents=True, exist_ok=True)
+            if db_file.exists():
+                bak = db_file.with_suffix(".db.bak")
+                import shutil
+                shutil.copy2(db_file, bak)
+            
+            with open(db_file, "wb") as f:
+                while True:
+                    chunk = await field.read_chunk()
+                    if not chunk:
+                        break
+                    f.write(chunk)
+            
+            # Reopen db
+            global _DB
+            _DB = PromptBookmarksDB(db_file)
+            return _ok({"status": "ok", "schema_version": _DB.schema_version()})
+        except Exception as exc:
+            LOGGER.exception("Failed to import database file")
+            return _error(str(exc), 500)
+
     @routes.post("/prompt-bookmarks/backup/import")
     async def backup_import(request: web.Request) -> web.Response:
         try:
