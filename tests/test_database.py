@@ -220,6 +220,15 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(binding["node_id"], "7")
         self.assertEqual(binding["binding_key"], "")
 
+    def test_link_media_to_prompt(self):
+        prompt = self.db.create_prompt(self.workflow_id, "Cover Test", self.fields())
+        ok = self.db.link_media_to_prompt(prompt["id"], "custom_cover.png", subfolder="custom", media_type="image", storage_type="input")
+        self.assertTrue(ok)
+        media_list = self.db.list_media(prompt["id"])
+        self.assertEqual(len(media_list), 1)
+        self.assertEqual(media_list[0]["filename"], "custom_cover.png")
+        self.assertEqual(media_list[0]["subfolder"], "custom")
+
 
 if __name__ == "__main__":
     unittest.main()

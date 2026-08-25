@@ -63,6 +63,10 @@ const I18N = {
     edit: "编辑",
     editPrompt: "编辑提示词",
     promptUpdated: "提示词已更新",
+    customCover: "自定义封面图 (可选)",
+    uploadCover: "上传封面图...",
+    coverUpdated: "封面已更新",
+    viewFullscreen: "点击全屏查看",
     notes: "备注 (可选)",
     notesPlaceholder: "添加关于此提示词的备注...",
     saveChanges: "保存修改",
@@ -160,6 +164,10 @@ const I18N = {
     edit: "Edit",
     editPrompt: "Edit Prompt",
     promptUpdated: "Prompt updated",
+    customCover: "Custom Cover Image (optional)",
+    uploadCover: "Upload Cover Image...",
+    coverUpdated: "Cover image updated",
+    viewFullscreen: "Click to view fullscreen",
     notes: "Notes (optional)",
     notesPlaceholder: "Add notes about this prompt...",
     saveChanges: "Save Changes",
@@ -634,6 +642,29 @@ async function editPrompt(prompt) {
   }
   dlg.body.appendChild(fieldsSection);
 
+  const coverWrap = document.createElement("div"); coverWrap.className = "pb-section";
+  const coverLabel = document.createElement("div"); coverLabel.className = "pb-label"; coverLabel.textContent = t("customCover");
+  const coverInput = document.createElement("input"); coverInput.type = "file"; coverInput.accept = "image/*"; coverInput.style.display = "none";
+  let uploadedMedia = null;
+  const uploadBtn = button(t("uploadCover"), () => coverInput.click());
+  coverInput.onchange = async () => {
+    const file = coverInput.files?.[0]; if (!file) return;
+    const formData = new FormData(); formData.append("image", file);
+    uploadBtn.textContent = "⏳ Uploading...";
+    try {
+      const resp = await fetch("/upload/image", { method: "POST", body: formData });
+      const res = await resp.json();
+      if (res && res.name) {
+        uploadedMedia = { filename: res.name, subfolder: res.subfolder || "", type: res.type || "input" };
+        uploadBtn.textContent = `✅ ${res.name}`;
+      }
+    } catch (_) {
+      uploadBtn.textContent = "❌ Upload failed";
+    }
+  };
+  coverWrap.append(coverLabel, uploadBtn, coverInput);
+  dlg.body.appendChild(coverWrap);
+
   dlg.foot.append(button(t("cancel"), () => dlg.overlay.remove()), button(t("saveChanges"), async () => {
     const cleanedName = name.value.trim(); if (!cleanedName) { name.focus(); return; }
     const groupName = group.value.trim(); let groupId = null;
@@ -655,6 +686,12 @@ async function editPrompt(prompt) {
         fields: updatedFields,
       }),
     });
+    if (uploadedMedia) {
+      await request(`/prompts/${encodeURIComponent(prompt.id)}/media`, {
+        method: "POST",
+        body: JSON.stringify(uploadedMedia),
+      });
+    }
     dlg.overlay.remove(); await loadData(); notify("success", t("promptUpdated"), cleanedName);
   }));
 }
@@ -817,6 +854,13 @@ function renderCard(prompt) {
       media.replaceWith(missing);
     }, { once: true });
     if (media.tagName === "VIDEO") { media.controls = true; media.muted = true; media.preload = "none"; } else media.loading = "lazy";
+    media.style.cursor = "zoom-in";
+    media.title = t("viewFullscreen");
+    media.onclick = (e) => {
+      e.stopPropagation();
+      if (typeof app.openImage === "function") app.openImage(src);
+      else window.open(src, "_blank");
+    };
     card.appendChild(media);
   }
   const body = document.createElement("div"); body.className = "pb-cardbody";

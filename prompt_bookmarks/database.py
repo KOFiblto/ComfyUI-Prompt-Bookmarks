@@ -445,6 +445,28 @@ class PromptBookmarksDB:
             ).fetchall()
             return [dict(r) for r in rows]
 
+    def link_media_to_prompt(
+        self,
+        prompt_id: str,
+        filename: str,
+        subfolder: str = "",
+        media_type: str = "image",
+        storage_type: str = "input",
+    ) -> bool:
+        if not prompt_id or not filename:
+            return False
+        now = utc_now()
+        with self._lock, self._conn() as conn:
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO prompt_media(
+                    prompt_id, prompt_execution_id, filename, subfolder, type, media_type, created_at
+                ) VALUES(?, ?, ?, ?, ?, ?, ?)
+                """,
+                (prompt_id, "manual", filename, subfolder, storage_type, media_type, now),
+            )
+            return True
+
     def link_media_by_fields(
         self,
         workflow_id: str,

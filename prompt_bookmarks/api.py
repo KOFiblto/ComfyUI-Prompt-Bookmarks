@@ -239,6 +239,23 @@ def register_routes() -> None:
     async def prompt_media_get(request: web.Request) -> web.Response:
         return _ok(get_db().list_media(request.match_info["prompt_id"]))
 
+    @routes.post("/prompt-bookmarks/prompts/{prompt_id}/media")
+    async def prompt_media_post(request: web.Request) -> web.Response:
+        try:
+            data = await _json(request)
+            prompt_id = request.match_info["prompt_id"]
+            filename = _require_text(data, "filename")
+            subfolder = str(data.get("subfolder", ""))
+            media_type = str(data.get("media_type", "image"))
+            storage_type = str(data.get("type", "input"))
+            success = get_db().link_media_to_prompt(prompt_id, filename, subfolder, media_type, storage_type)
+            return _ok({"success": success})
+        except ValueError as exc:
+            return _error(str(exc))
+        except Exception:
+            LOGGER.exception("Failed to link media")
+            return _error("Failed to link media", 500)
+
     @routes.post("/prompt-bookmarks/media/link")
     async def media_link(request: web.Request) -> web.Response:
         try:
