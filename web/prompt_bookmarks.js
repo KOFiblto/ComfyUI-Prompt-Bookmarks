@@ -100,11 +100,12 @@ const I18N = {
     sortCreated: "最近收藏",
     sortName: "名称",
     sortUsed: "使用次数",
-    backup: "数据备份",
-    exportBackup: "导出 JSON",
-    importBackup: "导入 JSON",
+    backup: "备份",
+    exportBackup: "导出备份",
+    importBackup: "导入备份",
+    dbLocation: "本地数据库文件: user/prompt_bookmarks/prompt_bookmarks.db",
     backupExported: "备份已导出",
-    backupImported: "备份已导入",
+    backupImported: "备份已成功导入",
     importBackupConfirm: "导入备份？同 ID 的收藏会更新，其他现有数据会保留。",
     invalidBackup: "备份文件无效",
     previewAutoplay: "视频预览自动播放",
@@ -202,11 +203,12 @@ const I18N = {
     sortCreated: "Recently saved",
     sortName: "Name",
     sortUsed: "Most used",
-    backup: "Data backup",
-    exportBackup: "Export JSON",
-    importBackup: "Import JSON",
+    backup: "Backup",
+    exportBackup: "Export Backup",
+    importBackup: "Import Backup",
+    dbLocation: "Local database file: user/prompt_bookmarks/prompt_bookmarks.db",
     backupExported: "Backup exported",
-    backupImported: "Backup imported",
+    backupImported: "Backup imported successfully",
     importBackupConfirm: "Import this backup? Matching bookmark IDs will be updated and other existing data will be kept.",
     invalidBackup: "Invalid backup file",
     previewAutoplay: "Autoplay video previews",
@@ -849,6 +851,8 @@ function showSettings() {
   const backupActions = document.createElement("div"); backupActions.className = "pb-row";
   backupActions.append(button(t("exportBackup"), exportBackup), button(t("importBackup"), importBackup));
   backupRow.append(backupText, backupActions); dlg.body.appendChild(backupRow);
+
+  const dbNote = document.createElement("div"); dbNote.className = "pb-help"; dbNote.textContent = t("dbLocation"); dlg.body.appendChild(dbNote);
 
   if (state.workflow) {
     const promptRow = document.createElement("div"); promptRow.className = "pb-settings-row";
