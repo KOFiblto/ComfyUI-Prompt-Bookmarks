@@ -235,7 +235,7 @@ def register_routes() -> None:
         get_db().mark_used(request.match_info["prompt_id"])
         return _ok()
 
-        @routes.put("/prompt-bookmarks/prompts/{prompt_id}/media")
+    @routes.put("/prompt-bookmarks/prompts/{prompt_id}/media")
     async def prompt_media_put(request: web.Request) -> web.Response:
         try:
             data = await _json(request)

@@ -922,6 +922,9 @@ function mediaUrl(media) { const q = new URLSearchParams({ filename: media.filen
 function isVideo(media) { return media?.media_type === "video" || /\.(mp4|webm|mov|mkv|m4v)$/i.test(media?.filename || ""); }
 
 async function loadPrompts() {
+  try {
+    state.encryptionStatus = await request("/encryption/status");
+  } catch (_) {}
   if (!state.workflow && !state.allMode) { state.prompts = []; state.allGroups = []; render(); return; }
   const params = new URLSearchParams({ limit: "500", sort: state.sort || "recent" });
   if (!state.allMode && state.workflow) params.set("workflow_id", state.workflow.id);
@@ -1230,7 +1233,46 @@ function render() {
   if (!state.root) return; state.root.replaceChildren();
   const head = document.createElement("div"); head.className = "pb-head";
   const top = document.createElement("div"); top.className = "pb-row";
-  const title = document.createElement("div"); title.className = "pb-title"; title.textContent = t("title"); top.append(title, button("⚙", showSettings)); head.appendChild(top);
+  const title = document.createElement("div"); title.className = "pb-title"; title.textContent = t("title");
+  if (state.encryptionStatus?.enabled && state.encryptionStatus?.unlocked) {
+    const lockBtn = button("🔒 " + (t("lock") || "Lock"), async () => {
+      await request("/encryption/lock", { method: "POST" });
+      state.encryptionStatus = await request("/encryption/status").catch(() => null);
+      await loadPrompts();
+      render();
+      notify("info", t("title"), "Database locked");
+    });
+    lockBtn.style.padding = "2px 8px"; lockBtn.style.fontSize = "11px";
+    top.append(title, lockBtn, button("⚙", showSettings));
+  } else {
+    top.append(title, button("⚙", showSettings));
+  }
+  head.appendChild(top);
+
+  if (state.encryptionStatus?.enabled && !state.encryptionStatus?.unlocked) {
+    const encWrap = document.createElement("div");
+    encWrap.style.cssText = "display:flex;gap:6px;align-items:center;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);border-radius:8px;padding:6px 8px;margin-bottom:4px;";
+    const passInput = document.createElement("input");
+    passInput.type = "password"; passInput.className = "pb-input";
+    passInput.style.cssText = "flex:1;padding:5px 8px;font-size:12px;";
+    passInput.placeholder = t("enterPassword") || "Enter master password...";
+    const unlockBtn = button("🔓 " + (t("unlock") || "Unlock"), async () => {
+      const p = passInput.value; if (!p) { passInput.focus(); return; }
+      try {
+        await request("/encryption/unlock", { method: "POST", body: JSON.stringify({ password: p }) });
+        notify("success", t("unlockedSuccess"));
+        state.encryptionStatus = await request("/encryption/status").catch(() => null);
+        await loadPrompts();
+        render();
+      } catch (e) {
+        notify("error", t("title"), String(e.message || e));
+      }
+    });
+    unlockBtn.style.padding = "5px 10px"; unlockBtn.style.fontSize = "12px";
+    passInput.onkeydown = (e) => { if (e.key === "Enter") unlockBtn.click(); };
+    encWrap.append(passInput, unlockBtn);
+    head.appendChild(encWrap);
+  }
   const wf = document.createElement("div"); wf.className = "pb-wf"; wf.textContent = state.workflow?.name || t("noActiveWorkflow"); head.appendChild(wf);
   const tabs = document.createElement("div"); tabs.className = "pb-tabs";
   tabs.append(
