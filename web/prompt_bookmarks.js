@@ -338,7 +338,16 @@ function injectStyles() {
     .pb-section-fields { display: flex !important; flex-direction: column !important; flex: 1 1 auto !important; min-height: 120px !important; }
     .pb-field-item-wrap { display: flex !important; flex-direction: column !important; flex: 1 1 auto !important; min-height: 90px !important; margin-bottom: 8px; }
     textarea.pb-field-textarea, .pb-section-fields textarea, .pb-field-item-wrap textarea { width: 100% !important; flex: 1 1 auto !important; height: 100% !important; min-height: 90px !important; box-sizing: border-box !important; resize: none !important; }
-.pb-dialog-foot{border-top:1px solid var(--border-color);justify-content:flex-end}.pb-help{font-size:12px;line-height:1.5;color:var(--descrip-text)}.pb-lightbox-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100005;backdrop-filter:blur(6px);cursor:zoom-out}.pb-lightbox-close{position:absolute;top:18px;right:24px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:22px;border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}.pb-lightbox-close:hover{background:rgba(239,68,68,.8)}.pb-carousel-container{display:flex;gap:10px;overflow-x:auto;padding:6px 2px 10px 2px;align-items:center}.pb-carousel-item{position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--border-color);flex:0 0 auto;background:#111}.pb-carousel-item img,.pb-carousel-item video{width:100%;height:100%;object-fit:cover}.pb-carousel-remove{position:absolute;top:3px;right:3px;background:rgba(239,68,68,.9);border:none;color:#fff;font-size:11px;font-weight:bold;width:20px;height:20px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s}.pb-carousel-remove:hover{transform:scale(1.15)}.pb-carousel-add{width:80px;height:80px;border-radius:8px;border:2px dashed var(--border-color);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--descrip-text);font-size:11px;gap:4px;flex:0 0 auto;transition:all .2s;background:rgba(255,255,255,.03)}.pb-carousel-add:hover{border-color:#10b981;color:#10b981;background:rgba(16,185,129,.08)}
+.pb-dialog-foot{border-top:1px solid var(--border-color);justify-content:flex-end}.pb-help{font-size:12px;line-height:1.5;color:var(--descrip-text)}.pb-lightbox-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100005;backdrop-filter:blur(6px);cursor:zoom-out}.pb-lightbox-close{position:absolute;top:18px;right:24px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:22px;border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}.pb-lightbox-close:hover{background:rgba(239,68,68,.8)}
+    .pb-lightbox-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:24px;border-radius:50%;width:46px;height:46px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;user-select:none;z-index:100010}
+    .pb-lightbox-nav:hover{background:rgba(255,255,255,.35);transform:translateY(-50%) scale(1.1)}
+    .pb-lightbox-prev{left:24px}
+    .pb-lightbox-next{right:24px}
+    .pb-lightbox-counter{position:absolute;bottom:24px;background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:13px;font-weight:600;padding:4px 14px;border-radius:999px;user-select:none;z-index:100010}
+    .pb-card-media-strip{display:flex;gap:6px;overflow-x:auto;padding:6px;background:#0d0d0f;border-bottom:1px solid var(--border-color)}
+    .pb-card-media-thumb{width:110px;height:110px;flex:0 0 110px;border-radius:6px;object-fit:cover;cursor:zoom-in;border:1px solid var(--border-color);transition:transform .15s ease,border-color .15s ease}
+    .pb-card-media-thumb:hover{transform:scale(1.03);border-color:#3b82f6}
+.pb-carousel-container{display:flex;gap:10px;overflow-x:auto;padding:6px 2px 10px 2px;align-items:center}.pb-carousel-item{position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--border-color);flex:0 0 auto;background:#111}.pb-carousel-item img,.pb-carousel-item video{width:100%;height:100%;object-fit:cover}.pb-carousel-remove{position:absolute;top:3px;right:3px;background:rgba(239,68,68,.9);border:none;color:#fff;font-size:11px;font-weight:bold;width:20px;height:20px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s}.pb-carousel-remove:hover{transform:scale(1.15)}.pb-carousel-add{width:80px;height:80px;border-radius:8px;border:2px dashed var(--border-color);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--descrip-text);font-size:11px;gap:4px;flex:0 0 auto;transition:all .2s;background:rgba(255,255,255,.03)}.pb-carousel-add:hover{border-color:#10b981;color:#10b981;background:rgba(16,185,129,.08)}
     .pb-candidate{border:1px solid var(--border-color);border-radius:8px;padding:10px;display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:start}.pb-candidate-main{min-width:0}.pb-candidate-title{font-weight:650;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.pb-recommended{font-size:10px;border:1px solid var(--border-color);border-radius:999px;padding:1px 5px;color:var(--descrip-text)}.pb-path{font-size:11px;color:var(--descrip-text);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pb-preview{font-size:12px;color:var(--descrip-text);margin-top:6px;white-space:pre-wrap;word-break:break-word;max-height:62px;overflow:hidden}.pb-label{font-size:12px;color:var(--descrip-text);margin-bottom:5px}.pb-field-preview{border:1px solid var(--border-color);background:var(--comfy-input-bg);border-radius:6px;padding:8px;white-space:pre-wrap;word-break:break-word;max-height:110px;overflow:auto}.pb-section{display:flex;flex-direction:column;gap:6px}.pb-settings-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-color)}
   `;
   document.head.appendChild(style);
@@ -362,7 +371,11 @@ function field(labelText, control) {
   const wrap = document.createElement("div"); wrap.className = "pb-section";
   const label = document.createElement("div"); label.className = "pb-label"; label.textContent = labelText; wrap.append(label, control); return wrap;
 }
-function openInWindowImageViewer(src, title = "") {
+function openInWindowImageViewer(mediaInput, initialIndex = 0, title = "") {
+  const items = Array.isArray(mediaInput) ? mediaInput : [{ filename: mediaInput }];
+  if (!items.length) return;
+  let currentIndex = Math.max(0, Math.min(initialIndex, items.length - 1));
+
   const overlay = document.createElement("div");
   overlay.className = "pb-lightbox-overlay";
 
@@ -373,27 +386,79 @@ function openInWindowImageViewer(src, title = "") {
   const close = () => { overlay.remove(); document.removeEventListener("keydown", onKey); };
   closeBtn.onclick = close;
 
-  const onKey = (e) => { if (e.key === "Escape") close(); };
-  document.addEventListener("keydown", onKey);
+  const contentWrap = document.createElement("div");
+  contentWrap.style.cssText = "display:flex;align-items:center;justify-content:center;max-width:92vw;max-height:88vh;position:relative;";
+  contentWrap.onclick = (e) => e.stopPropagation();
 
-  const isVid = isVideo({ filename: src });
-  const mediaEl = isVid ? document.createElement("video") : document.createElement("img");
-  mediaEl.src = src;
-  mediaEl.style.maxWidth = "92vw";
-  mediaEl.style.maxHeight = "88vh";
-  mediaEl.style.objectFit = "contain";
-  mediaEl.style.borderRadius = "8px";
-  mediaEl.style.boxShadow = "0 8px 32px rgba(0,0,0,0.85)";
-  mediaEl.style.cursor = "default";
-  mediaEl.onclick = (e) => e.stopPropagation();
-  if (isVid) {
-    mediaEl.controls = true;
-    mediaEl.autoplay = true;
+  let prevBtn = null;
+  let nextBtn = null;
+  let counter = null;
+
+  function updateMedia() {
+    contentWrap.innerHTML = "";
+    const item = items[currentIndex];
+    const src = typeof item === "string" ? item : mediaUrl(item);
+    const isVid = isVideo(item) || isVideo({ filename: src });
+
+    const mediaEl = isVid ? document.createElement("video") : document.createElement("img");
+    mediaEl.src = src;
+    mediaEl.style.maxWidth = "92vw";
+    mediaEl.style.maxHeight = "85vh";
+    mediaEl.style.objectFit = "contain";
+    mediaEl.style.borderRadius = "8px";
+    mediaEl.style.boxShadow = "0 8px 32px rgba(0,0,0,0.85)";
+    mediaEl.style.cursor = "default";
+    if (isVid) {
+      mediaEl.controls = true;
+      mediaEl.autoplay = true;
+    }
+    contentWrap.appendChild(mediaEl);
+
+    if (counter) counter.textContent = `${currentIndex + 1} / ${items.length}`;
   }
 
-  overlay.append(closeBtn, mediaEl);
+  if (items.length > 1) {
+    prevBtn = document.createElement("button");
+    prevBtn.className = "pb-lightbox-nav pb-lightbox-prev";
+    prevBtn.innerHTML = "&#10094;";
+    prevBtn.title = "Previous (Left Arrow)";
+    prevBtn.onclick = (e) => {
+      e.stopPropagation();
+      currentIndex = (currentIndex - 1 + items.length) % items.length;
+      updateMedia();
+    };
+
+    nextBtn = document.createElement("button");
+    nextBtn.className = "pb-lightbox-nav pb-lightbox-next";
+    nextBtn.innerHTML = "&#10095;";
+    nextBtn.title = "Next (Right Arrow)";
+    nextBtn.onclick = (e) => {
+      e.stopPropagation();
+      currentIndex = (currentIndex + 1) % items.length;
+      updateMedia();
+    };
+
+    counter = document.createElement("div");
+    counter.className = "pb-lightbox-counter";
+    overlay.append(prevBtn, nextBtn, counter);
+  }
+
+  const onKey = (e) => {
+    if (e.key === "Escape") close();
+    else if (e.key === "ArrowLeft" && items.length > 1) {
+      currentIndex = (currentIndex - 1 + items.length) % items.length;
+      updateMedia();
+    } else if (e.key === "ArrowRight" && items.length > 1) {
+      currentIndex = (currentIndex + 1) % items.length;
+      updateMedia();
+    }
+  };
+  document.addEventListener("keydown", onKey);
+
+  overlay.append(closeBtn, contentWrap);
   overlay.onclick = (e) => { if (e.target === overlay) close(); };
   document.body.appendChild(overlay);
+  updateMedia();
 }
 
 function createMediaCarousel(initialMediaList = []) {
@@ -1150,24 +1215,46 @@ async function showSettings() {
 
 function renderCard(prompt) {
   const card = document.createElement("div"); card.className = "pb-card";
-  if (prompt.latest_media) {
-    const media = isVideo(prompt.latest_media) ? document.createElement("video") : document.createElement("img");
-    media.className = "pb-media";
-    const src = mediaUrl(prompt.latest_media);
-    if (media.tagName === "VIDEO") media.dataset.pbSrc = src; else media.src = src;
-    media.addEventListener("error", () => {
-      if (!media.isConnected) return;
-      const missing = document.createElement("div"); missing.className = "pb-media-missing"; missing.textContent = t("previewUnavailable");
-      media.replaceWith(missing);
-    }, { once: true });
-    if (media.tagName === "VIDEO") { media.controls = true; media.muted = true; media.preload = "none"; } else media.loading = "lazy";
-    media.style.cursor = "zoom-in";
-    media.title = t("viewFullscreen");
-    media.onclick = (e) => {
-      e.stopPropagation();
-      openInWindowImageViewer(src, prompt.name);
-    };
-    card.appendChild(media);
+  const mediaList = (prompt.media && prompt.media.length) ? prompt.media : (prompt.latest_media ? [prompt.latest_media] : []);
+
+  if (!prompt.is_locked && mediaList.length > 0) {
+    if (mediaList.length === 1) {
+      const item = mediaList[0];
+      const media = isVideo(item) ? document.createElement("video") : document.createElement("img");
+      media.className = "pb-media";
+      const src = mediaUrl(item);
+      if (media.tagName === "VIDEO") media.dataset.pbSrc = src; else media.src = src;
+      media.addEventListener("error", () => {
+        if (!media.isConnected) return;
+        const missing = document.createElement("div"); missing.className = "pb-media-missing"; missing.textContent = t("previewUnavailable");
+        media.replaceWith(missing);
+      }, { once: true });
+      if (media.tagName === "VIDEO") { media.controls = true; media.muted = true; media.preload = "none"; } else media.loading = "lazy";
+      media.style.cursor = "zoom-in";
+      media.title = t("viewFullscreen");
+      media.onclick = (e) => {
+        e.stopPropagation();
+        openInWindowImageViewer(mediaList, 0, prompt.name);
+      };
+      card.appendChild(media);
+    } else {
+      const strip = document.createElement("div");
+      strip.className = "pb-card-media-strip";
+      mediaList.forEach((item, idx) => {
+        const isVid = isVideo(item);
+        const el = isVid ? document.createElement("video") : document.createElement("img");
+        el.className = "pb-card-media-thumb";
+        const src = mediaUrl(item);
+        if (isVid) { el.dataset.pbSrc = src; el.muted = true; } else { el.src = src; el.loading = "lazy"; }
+        el.title = `${prompt.name} (${idx + 1}/${mediaList.length})`;
+        el.onclick = (e) => {
+          e.stopPropagation();
+          openInWindowImageViewer(mediaList, idx, prompt.name);
+        };
+        strip.appendChild(el);
+      });
+      card.appendChild(strip);
+    }
   }
   const body = document.createElement("div"); body.className = "pb-cardbody";
   const title = document.createElement("div"); title.className = "pb-cardtitle"; title.textContent = prompt.name; body.appendChild(title);

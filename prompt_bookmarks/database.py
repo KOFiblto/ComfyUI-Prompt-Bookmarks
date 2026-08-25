@@ -473,9 +473,14 @@ class PromptBookmarksDB:
             row["fields"] = json.loads(raw_fields)
             row["is_locked"] = False
         media_list_raw = row.pop("media_list_json", None)
-        row["media"] = json.loads(media_list_raw) if media_list_raw else []
         latest = row.pop("latest_media_json", None)
-        row["latest_media"] = json.loads(latest) if latest else (row["media"][0] if row["media"] else None)
+        if row.get("is_locked"):
+            row["media"] = []
+            row["latest_media"] = None
+            row["media_count"] = 0
+        else:
+            row["media"] = json.loads(media_list_raw) if media_list_raw else []
+            row["latest_media"] = json.loads(latest) if latest else (row["media"][0] if row["media"] else None)
         return row
 
     def get_prompt(self, prompt_id: str) -> dict[str, Any] | None:
