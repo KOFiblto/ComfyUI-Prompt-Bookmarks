@@ -2,6 +2,20 @@
 
 All notable changes to ComfyUI Prompt Bookmarks are documented here.
 
+## 0.3.0 — 2026-08-25
+
+### Added
+
+- **Multi-Cover Carousel & Lightbox**: Attach and manage multiple cover images/videos per bookmark with add/remove buttons, inline preview strips, and an in-window lightbox viewer with `[❮]` / `[❯]` navigation.
+- **Centered Resizable Modals**: Dialogs can be resized freely from the bottom-right corner while maintaining center alignment; prompt textareas stretch automatically to consume available vertical space.
+- **Zero-Dependency Password Encryption**: Local AES-256-GCM encryption with PBKDF2 key derivation for prompt fields and notes using the Python standard library. Includes inline sidebar unlock banner, instant lock toggle, and media protection while locked.
+- **Direct SQLite Database (.db) Backup & Restore**: One-click raw database download and restore with automatic `.db.bak` safety backups.
+- **Manual Prompt Creation**: "Add Prompt" dialog for creating bookmarks with free-form text input without requiring active canvas fields.
+- **Inline Prompt Editing**: "Edit" action on bookmark cards allowing instant updates to prompt fields, name, group, and private notes.
+- **Select All & Clear All**: Quick selection actions in the field configuration dialog.
+- **Third-Party Integration Event**: Dispatches and listens to `prompt-bookmarks-create` events for seamless external extension integration.
+- **Arbitrary Widget Presets**: Optional "Show all widgets" toggle allowing bookmarks to capture LoRA, steps, and aspect ratio widgets alongside prompt text.
+
 ## 0.2.0 — 2026-08-23
 
 ### Added

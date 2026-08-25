@@ -65,7 +65,7 @@ def register_routes() -> None:
     @routes.get("/prompt-bookmarks/health")
     async def health(_request: web.Request) -> web.Response:
         db = get_db()
-        return _ok({"version": "0.2.0", "schema_version": db.schema_version(), "database": str(db.path)})
+        return _ok({"version": "0.3.0", "schema_version": db.schema_version(), "database": str(db.path)})
 
     @routes.get("/prompt-bookmarks/backup")
     async def backup_get(_request: web.Request) -> web.Response:
