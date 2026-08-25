@@ -57,6 +57,14 @@ If you are searching for a **ComfyUI prompt manager**, **prompt library**, **pro
   - motion/camera prompt
   - negative prompt
 - Organize prompts by **workflow + group**
+- Manual prompt creation modal and inline prompt editing
+- Multi-cover media carousel with `[＋]` add and `[✕]` remove buttons
+- Built-in in-window lightbox viewer with `[❮]` / `[❯]` arrow navigation and keyboard shortcuts
+- Centered resizable dialogs with responsive, auto-stretching prompt textareas
+- Zero-dependency local AES-256-GCM password encryption with instant sidebar lock/unlock
+- Direct SQLite database (`.db`) export and restore in settings alongside JSON backup
+- Third-party `prompt-bookmarks-create` integration event for asset browsers and menus
+- Optional "Show all widgets" support for LoRA, steps, and aspect ratio parameter presets
 - Delete empty groups safely
 - Search saved prompts
 - Sort by recently used, recently saved, name, or use count
