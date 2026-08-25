@@ -198,6 +198,7 @@ const I18N = {
     locateFailed: "Could not locate node",
     exposedOnly: "This version only works with editable fields visible on the current canvas or exposed by group nodes/subgraphs.",
     saveBeforeBookmark: "Before the first bookmark, choose which text fields belong to this prompt set.",
+    showAllWidgets: "Show all widgets (LoRA, aspect ratio, steps, etc.)",,
   },
 };
 
@@ -361,7 +362,7 @@ function resolveLiveField(field) {
   if (matches.length !== 1) return null;
   return { node: matches[0].node, widget: matches[0].widget, recovered: true };
 }
-function promptCandidates() {
+function promptCandidates(includeAll = false) {
   const out = [];
   const likely = /(prompt|text|positive|negative|caption|instruction|description|motion|camera|scene|character)/i;
   const reject = /^(filename|filename_prefix|path|directory|folder|seed|url|model|ckpt|checkpoint)$/i;
@@ -414,9 +415,9 @@ function collectCurrentFields() {
   return fields;
 }
 
-async function configureBindings() {
+async function configureBindings(includeAll = false) {
   if (!state.workflow) return;
-  const candidates = promptCandidates();
+  const candidates = promptCandidates(includeAll);
   if (!candidates.length) return notify("warn", t("noTextWidgets"), t("noTextWidgetsDetail"));
   const existing = new Set(state.bindings.map((b) => `${b.node_id}::${b.widget_name}`));
   const usableExisting = candidates.some((c) => existing.has(`${c.node_id}::${c.widget_name}`));
@@ -424,6 +425,14 @@ async function configureBindings() {
   const dlg = openDialog(t("configureTitle"));
   const help = document.createElement("div"); help.className = "pb-help"; help.textContent = t("configureDesc"); dlg.body.appendChild(help);
   const note = document.createElement("div"); note.className = "pb-help"; note.textContent = t("exposedOnly"); dlg.body.appendChild(note);
+
+  const toggleRow = document.createElement("div"); toggleRow.style.display = "flex"; toggleRow.style.alignItems = "center"; toggleRow.style.gap = "6px"; toggleRow.className = "pb-help";
+  const toggleCheck = document.createElement("input"); toggleCheck.type = "checkbox"; toggleCheck.checked = includeAll;
+  toggleCheck.onchange = () => { dlg.overlay.remove(); configureBindings(toggleCheck.checked); };
+  const toggleLabel = document.createElement("label"); toggleLabel.textContent = t("showAllWidgets"); toggleLabel.style.cursor = "pointer";
+  toggleLabel.onclick = () => { toggleCheck.checked = !toggleCheck.checked; dlg.overlay.remove(); configureBindings(toggleCheck.checked); };
+  toggleRow.append(toggleCheck, toggleLabel);
+  dlg.body.appendChild(toggleRow);
   const count = document.createElement("div"); count.className = "pb-help";
   const updateCount = () => { count.textContent = t("selectedCount", { count: selected.size }); }; updateCount(); dlg.body.appendChild(count);
   for (const c of candidates) {

@@ -46,6 +46,7 @@ If you are searching for a **ComfyUI prompt manager**, **prompt library**, **pro
 - Sidebar-first prompt library with **no added workflow nodes**
 - English and Simplified Chinese UI
 - Automatically follows the active workflow, including workflows whose template UUIDs collide
+- Visual prompt-field picker with optional "Show all widgets" toggle (supporting LoRA, aspect ratio, steps, and numeric widgets)
 - Visual prompt-field picker — select fields with checkboxes; **no node IDs need to be entered manually**
 - Smart prompt/text field recommendations while keeping Note/Markdown fields unchecked by default
 - **Locate** action to jump to the source node on the canvas
