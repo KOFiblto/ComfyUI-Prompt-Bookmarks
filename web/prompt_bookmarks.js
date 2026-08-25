@@ -105,6 +105,8 @@ const I18N = {
     languageAuto: "跟随 ComfyUI / 浏览器",
     languageZh: "简体中文",
     languageEn: "English",
+    selectAll: "全选",
+    clearAll: "清空",
     autoLink: "自动关联生成结果",
     promptFields: "提示词字段",
     reselect: "重新选择",
@@ -191,7 +193,9 @@ const I18N = {
     languageAuto: "Follow ComfyUI / browser",
     languageZh: "简体中文",
     languageEn: "English",
-    autoLink: "Automatically link generated media",
+    selectAll: "Select all",
+    clearAll: "Clear all",
+    autoLink: "Auto-link generation results",
     promptFields: "Prompt Fields",
     reselect: "Reselect",
     close: "Close",
@@ -424,8 +428,25 @@ async function configureBindings() {
   const dlg = openDialog(t("configureTitle"));
   const help = document.createElement("div"); help.className = "pb-help"; help.textContent = t("configureDesc"); dlg.body.appendChild(help);
   const note = document.createElement("div"); note.className = "pb-help"; note.textContent = t("exposedOnly"); dlg.body.appendChild(note);
-  const count = document.createElement("div"); count.className = "pb-help";
-  const updateCount = () => { count.textContent = t("selectedCount", { count: selected.size }); }; updateCount(); dlg.body.appendChild(count);
+  const countWrap = document.createElement("div"); countWrap.className = "pb-help"; countWrap.style.display = "flex"; countWrap.style.justifyContent = "space-between"; countWrap.style.alignItems = "center";
+  const count = document.createElement("div");
+  const updateCount = () => { count.textContent = t("selectedCount", { count: selected.size }); }; updateCount();
+  const selectActions = document.createElement("div"); selectActions.style.display = "flex"; selectActions.style.gap = "6px";
+  const btnSelectAll = button(t("selectAll"), () => {
+    for (const c of candidates) selected.add(`${c.node_id}::${c.widget_name}`);
+    dlg.body.querySelectorAll("input[type=checkbox]").forEach((cb) => { cb.checked = true; });
+    updateCount();
+  });
+  btnSelectAll.style.fontSize = "11px"; btnSelectAll.style.padding = "2px 8px";
+  const btnClearAll = button(t("clearAll"), () => {
+    selected.clear();
+    dlg.body.querySelectorAll("input[type=checkbox]").forEach((cb) => { cb.checked = false; });
+    updateCount();
+  });
+  btnClearAll.style.fontSize = "11px"; btnClearAll.style.padding = "2px 8px";
+  selectActions.append(btnSelectAll, btnClearAll);
+  countWrap.append(count, selectActions);
+  dlg.body.appendChild(countWrap);
   for (const c of candidates) {
     const row = document.createElement("div"); row.className = "pb-candidate";
     const check = document.createElement("input"); check.type = "checkbox"; const key = `${c.node_id}::${c.widget_name}`; check.checked = selected.has(key);
