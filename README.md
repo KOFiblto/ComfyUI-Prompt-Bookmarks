@@ -141,6 +141,26 @@ Media files are **not copied** into the plugin database. Prompt Bookmarks stores
 
 Common image outputs are supported, plus MP4, WebM, MOV, MKV, and M4V when the output exposes ComfyUI-style file metadata. Video sources are loaded lazily near the visible sidebar area, and muted autoplay can be enabled from settings.
 
+## Media Carousel & Lightbox
+
+- **Multi-Cover Carousel** — attach multiple custom images/videos to any prompt bookmark. Add or remove covers with `[＋]` and `[✕]`.
+- **In-Window Lightbox** — click any preview thumbnail to view media in full resolution directly inside ComfyUI without opening external browser tabs.
+
+## Resizable Dialogs
+
+- **Centered & Resizable** — dialog windows can be resized from the bottom-right corner while staying centered.
+- **Responsive Textareas** — prompt textareas automatically expand to fill available window space as you resize. Window dimensions are saved locally.
+
+## Database Backup & Export
+
+- **JSON Backup** — portable merge-friendly JSON export/import of all prompts, bindings, and references.
+- **Raw Database (.db) Backup** — direct export and import of the SQLite database file from settings.
+
+## Password Protection & Encryption
+
+- **AES-256-GCM Encryption** — optionally secure prompt text and private notes with a master password using Python's standard library.
+- **Lock & Unlock Sessions** — lock the prompt library at any time; unlocked sessions stay in memory without persisting raw passwords to disk.
+
 ## JSON backup
 
 The sidebar settings include **Export JSON** and **Import JSON**.
