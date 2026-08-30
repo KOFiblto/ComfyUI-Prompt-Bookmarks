@@ -92,6 +92,11 @@ const I18N = {
     backupExported: "备份已导出",
     backupImported: "备份已导入",
     importBackupConfirm: "导入备份？同 ID 的收藏会更新，其他现有数据会保留。",
+    importConflictTitle: "发现同名收藏",
+    importConflictDetail: "检测到 {count} 条“同工作流 + 同分组 + 同名”收藏。请选择本次导入统一采用的处理方式。",
+    importOverwriteSameName: "覆盖同名",
+    importKeepBoth: "保留两条",
+    importSkipDuplicates: "跳过重复",
     invalidBackup: "备份文件无效",
     previewAutoplay: "视频预览自动播放",
     workflow: "工作流",
@@ -178,6 +183,11 @@ const I18N = {
     backupExported: "Backup exported",
     backupImported: "Backup imported",
     importBackupConfirm: "Import this backup? Matching bookmark IDs will be updated and other existing data will be kept.",
+    importConflictTitle: "Duplicate bookmark names found",
+    importConflictDetail: "{count} bookmarks have the same workflow, group, and name as existing data. Choose one policy for all conflicts in this import.",
+    importOverwriteSameName: "Overwrite same name",
+    importKeepBoth: "Keep both",
+    importSkipDuplicates: "Skip duplicates",
     invalidBackup: "Invalid backup file",
     previewAutoplay: "Autoplay video previews",
     workflow: "Workflow",
@@ -603,17 +613,43 @@ async function exportBackup() {
   downloadJson(`prompt-bookmarks-${stamp}.json`, data);
   notify("success", t("backupExported"));
 }
+async function performBackupImport(data, conflictPolicy) {
+  const policy = encodeURIComponent(conflictPolicy || "keep_both");
+  await request(`/backup/import?conflict_policy=${policy}`, { method: "POST", body: JSON.stringify(data) });
+  if (state.workflow) await loadData(); else await loadPrompts();
+  notify("success", t("backupImported"));
+}
+function showImportConflictDialog(data, preview) {
+  const dlg = openDialog(t("importConflictTitle"));
+  const detail = document.createElement("div"); detail.className = "pb-help";
+  detail.textContent = t("importConflictDetail", { count: Number(preview?.name_conflicts || 0) });
+  dlg.body.appendChild(detail);
+  const run = async (policy) => {
+    dlg.overlay.remove();
+    try { await performBackupImport(data, policy); }
+    catch (err) { notify("error", t("title"), String(err?.message || err)); }
+  };
+  dlg.foot.append(
+    button(t("cancel"), () => dlg.overlay.remove()),
+    button(t("importSkipDuplicates"), () => run("skip")),
+    button(t("importKeepBoth"), () => run("keep_both")),
+    button(t("importOverwriteSameName"), () => run("overwrite")),
+  );
+}
 async function importBackup() {
   const input = document.createElement("input"); input.type = "file"; input.accept = "application/json,.json";
   input.onchange = async () => {
     const file = input.files?.[0]; if (!file) return;
     let data;
     try { data = JSON.parse(await file.text()); } catch (_) { notify("error", t("title"), t("invalidBackup")); return; }
-    if (!window.confirm(t("importBackupConfirm"))) return;
     try {
-      await request("/backup/import", { method: "POST", body: JSON.stringify(data) });
-      if (state.workflow) await loadData(); else await loadPrompts();
-      notify("success", t("backupImported"));
+      const preview = await request("/backup/import/preview", { method: "POST", body: JSON.stringify(data) });
+      if (Number(preview?.name_conflicts || 0) > 0) {
+        showImportConflictDialog(data, preview);
+        return;
+      }
+      if (!window.confirm(t("importBackupConfirm"))) return;
+      await performBackupImport(data, "keep_both");
     } catch (err) { notify("error", t("title"), String(err?.message || err)); }
   };
   input.click();

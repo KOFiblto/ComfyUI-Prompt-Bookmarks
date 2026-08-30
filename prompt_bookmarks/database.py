@@ -569,14 +569,72 @@ class PromptBookmarksDB:
                 "workflows": workflows,
             }
 
-    def import_backup(self, data: dict[str, Any]) -> dict[str, int]:
+    @staticmethod
+    def _backup_workflows(data: dict[str, Any]) -> list[Any]:
         if data.get("format") != BACKUP_FORMAT or int(data.get("format_version", 0)) != BACKUP_FORMAT_VERSION:
             raise ValueError("Unsupported Prompt Bookmarks backup format")
         workflows = data.get("workflows")
         if not isinstance(workflows, list):
             raise ValueError("Backup workflows must be an array")
+        return workflows
 
-        counts = {"workflows": 0, "bindings": 0, "groups": 0, "prompts": 0, "media": 0}
+    def preview_backup_import(self, data: dict[str, Any]) -> dict[str, Any]:
+        workflows = self._backup_workflows(data)
+        conflicts: list[dict[str, str]] = []
+        with self._lock, self._conn() as conn:
+            for wf in workflows:
+                if not isinstance(wf, dict):
+                    raise ValueError("Invalid workflow entry in backup")
+                workflow_id = str(wf.get("workflow_id", "")).strip()
+                if not workflow_id:
+                    raise ValueError("Backup workflow_id is required")
+                rows = conn.execute(
+                    """
+                    SELECT p.id, p.name, COALESCE(g.name, '') AS group_name
+                    FROM prompts p
+                    LEFT JOIN groups g ON g.id=p.group_id
+                    WHERE p.workflow_id=?
+                    """,
+                    (workflow_id,),
+                ).fetchall()
+                existing_ids = {str(row["id"]) for row in rows}
+                occupied = {
+                    (str(row["name"]).strip().casefold(), str(row["group_name"]).strip().casefold())
+                    for row in rows
+                }
+                prompts = wf.get("prompts", [])
+                if not isinstance(prompts, list):
+                    raise ValueError("Backup prompts must be an array")
+                for prompt in prompts:
+                    if not isinstance(prompt, dict):
+                        continue
+                    prompt_id = str(prompt.get("id", "")).strip()
+                    name = str(prompt.get("name", "")).strip()
+                    fields = prompt.get("fields", [])
+                    if not prompt_id or not name or not isinstance(fields, list) or not fields:
+                        raise ValueError("Invalid prompt entry in backup")
+                    group_name = str(prompt.get("group_name") or "").strip()
+                    key = (name.casefold(), group_name.casefold())
+                    if prompt_id not in existing_ids and key in occupied:
+                        conflicts.append({"id": prompt_id, "name": name, "group_name": group_name, "workflow_id": workflow_id})
+                    occupied.add(key)
+        return {"name_conflicts": len(conflicts), "conflicts": conflicts[:20]}
+
+    def import_backup(self, data: dict[str, Any], conflict_policy: str = "keep_both") -> dict[str, int]:
+        workflows = self._backup_workflows(data)
+        if conflict_policy not in {"overwrite", "keep_both", "skip"}:
+            raise ValueError("Invalid backup conflict policy")
+
+        counts = {
+            "workflows": 0,
+            "bindings": 0,
+            "groups": 0,
+            "prompts": 0,
+            "media": 0,
+            "name_conflicts": 0,
+            "overwritten": 0,
+            "skipped": 0,
+        }
         now = utc_now()
         with self._lock, self._conn() as conn:
             for wf in workflows:
@@ -640,7 +698,7 @@ class PromptBookmarksDB:
                     if not name:
                         continue
                     row = conn.execute(
-                        "SELECT id FROM groups WHERE workflow_id=? AND name=?",
+                        "SELECT id FROM groups WHERE workflow_id=? AND name=? COLLATE NOCASE",
                         (workflow_id, name),
                     ).fetchone()
                     if row:
@@ -655,7 +713,7 @@ class PromptBookmarksDB:
                             (workflow_id, name, int(group.get("sort_order", index)), str(group.get("created_at") or now)),
                         )
                         group_id = int(cur.lastrowid)
-                    group_map[name] = group_id
+                    group_map[name.casefold()] = group_id
                     counts["groups"] += 1
 
                 prompts = wf.get("prompts", [])
@@ -670,10 +728,10 @@ class PromptBookmarksDB:
                     if not prompt_id or not name or not isinstance(fields, list) or not fields:
                         raise ValueError("Invalid prompt entry in backup")
                     group_name = str(prompt.get("group_name") or "").strip()
-                    group_id = group_map.get(group_name) if group_name else None
+                    group_id = group_map.get(group_name.casefold()) if group_name else None
                     if group_name and group_id is None:
                         row = conn.execute(
-                            "SELECT id FROM groups WHERE workflow_id=? AND name=?",
+                            "SELECT id FROM groups WHERE workflow_id=? AND name=? COLLATE NOCASE",
                             (workflow_id, group_name),
                         ).fetchone()
                         if row:
@@ -684,7 +742,38 @@ class PromptBookmarksDB:
                                 (workflow_id, group_name, len(group_map), now),
                             )
                             group_id = int(cur.lastrowid)
-                        group_map[group_name] = group_id
+                        group_map[group_name.casefold()] = group_id
+
+                    exact = conn.execute("SELECT id FROM prompts WHERE id=?", (prompt_id,)).fetchone()
+                    target_prompt_id = prompt_id
+                    if exact is None:
+                        if group_id is None:
+                            conflict = conn.execute(
+                                """
+                                SELECT id FROM prompts
+                                WHERE workflow_id=? AND group_id IS NULL AND name=? COLLATE NOCASE
+                                LIMIT 1
+                                """,
+                                (workflow_id, name),
+                            ).fetchone()
+                        else:
+                            conflict = conn.execute(
+                                """
+                                SELECT id FROM prompts
+                                WHERE workflow_id=? AND group_id=? AND name=? COLLATE NOCASE
+                                LIMIT 1
+                                """,
+                                (workflow_id, group_id, name),
+                            ).fetchone()
+                        if conflict is not None:
+                            counts["name_conflicts"] += 1
+                            if conflict_policy == "skip":
+                                counts["skipped"] += 1
+                                continue
+                            if conflict_policy == "overwrite":
+                                target_prompt_id = str(conflict["id"])
+                                counts["overwritten"] += 1
+
                     fields_json = json.dumps(fields, ensure_ascii=False, separators=(",", ":"))
                     created_at = str(prompt.get("created_at") or now)
                     updated_at = str(prompt.get("updated_at") or created_at)
@@ -707,7 +796,7 @@ class PromptBookmarksDB:
                             use_count=excluded.use_count
                         """,
                         (
-                            prompt_id,
+                            target_prompt_id,
                             workflow_id,
                             group_id,
                             name,
@@ -738,7 +827,7 @@ class PromptBookmarksDB:
                             ) VALUES(?, ?, ?, ?, ?, ?, ?)
                             """,
                             (
-                                prompt_id,
+                                target_prompt_id,
                                 str(item.get("prompt_execution_id", "")),
                                 filename,
                                 str(item.get("subfolder", "")),

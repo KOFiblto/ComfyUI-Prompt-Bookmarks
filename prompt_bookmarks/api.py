@@ -71,11 +71,23 @@ def register_routes() -> None:
     async def backup_get(_request: web.Request) -> web.Response:
         return _ok(get_db().export_backup())
 
+    @routes.post("/prompt-bookmarks/backup/import/preview")
+    async def backup_import_preview(request: web.Request) -> web.Response:
+        try:
+            data = await _json(request)
+            return _ok(get_db().preview_backup_import(data))
+        except ValueError as exc:
+            return _error(str(exc))
+        except Exception:
+            LOGGER.exception("Failed to preview Prompt Bookmarks backup")
+            return _error("Failed to preview backup", 500)
+
     @routes.post("/prompt-bookmarks/backup/import")
     async def backup_import(request: web.Request) -> web.Response:
         try:
             data = await _json(request)
-            return _ok(get_db().import_backup(data))
+            policy = request.query.get("conflict_policy", "keep_both")
+            return _ok(get_db().import_backup(data, conflict_policy=policy))
         except ValueError as exc:
             return _error(str(exc))
         except Exception:

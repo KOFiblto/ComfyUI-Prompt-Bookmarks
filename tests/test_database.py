@@ -176,9 +176,59 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(restored_prompt["media_count"], 1)
         self.assertEqual(restored.get_bindings(self.workflow_id)[0]["binding_key"], "TextNode|Prompt||text")
 
+        preview = restored.preview_backup_import(backup)
+        self.assertEqual(preview["name_conflicts"], 0)
         second = restored.import_backup(backup)
         self.assertEqual(second["media"], 0)
         self.assertEqual(restored.get_prompt(prompt["id"])["media_count"], 1)
+
+    def test_backup_name_conflict_policies(self):
+        source = PromptBookmarksDB(Path(self.tempdir.name) / "source.db")
+        source.upsert_workflow(self.workflow_id, "H3 Test", "H3 Test.json")
+        source_group = source.create_group(self.workflow_id, "Character")
+        incoming = source.create_prompt(self.workflow_id, "Turn around", self.fields("incoming prompt"), source_group["id"])
+        source.link_media_by_fields(
+            self.workflow_id,
+            self.fields("incoming prompt"),
+            "exec-import",
+            [{"filename": "incoming.png", "subfolder": "", "type": "output", "media_type": "image"}],
+        )
+        backup = source.export_backup()
+
+        def target(filename):
+            db = PromptBookmarksDB(Path(self.tempdir.name) / filename)
+            db.upsert_workflow(self.workflow_id, "H3 Test", "H3 Test.json")
+            group = db.create_group(self.workflow_id, "Character")
+            local = db.create_prompt(self.workflow_id, "Turn around", self.fields("local prompt"), group["id"])
+            return db, local
+
+        overwrite_db, overwrite_local = target("overwrite.db")
+        preview = overwrite_db.preview_backup_import(backup)
+        self.assertEqual(preview["name_conflicts"], 1)
+        overwritten = overwrite_db.import_backup(backup, conflict_policy="overwrite")
+        self.assertEqual(overwritten["name_conflicts"], 1)
+        self.assertEqual(overwritten["overwritten"], 1)
+        overwrite_items = overwrite_db.list_prompts(workflow_id=self.workflow_id)
+        self.assertEqual(len(overwrite_items), 1)
+        self.assertEqual(overwrite_items[0]["id"], overwrite_local["id"])
+        self.assertEqual(overwrite_items[0]["fields"][0]["value"], "incoming prompt")
+        self.assertEqual(overwrite_items[0]["media_count"], 1)
+
+        keep_db, _ = target("keep.db")
+        kept = keep_db.import_backup(backup, conflict_policy="keep_both")
+        self.assertEqual(kept["name_conflicts"], 1)
+        keep_items = keep_db.list_prompts(workflow_id=self.workflow_id)
+        self.assertEqual(len(keep_items), 2)
+        self.assertIn(incoming["id"], {item["id"] for item in keep_items})
+
+        skip_db, skip_local = target("skip.db")
+        skipped = skip_db.import_backup(backup, conflict_policy="skip")
+        self.assertEqual(skipped["name_conflicts"], 1)
+        self.assertEqual(skipped["skipped"], 1)
+        skip_items = skip_db.list_prompts(workflow_id=self.workflow_id)
+        self.assertEqual(len(skip_items), 1)
+        self.assertEqual(skip_items[0]["id"], skip_local["id"])
+        self.assertEqual(skip_items[0]["fields"][0]["value"], "local prompt")
 
     def test_backup_import_rejects_unknown_format(self):
         with self.assertRaisesRegex(ValueError, "Unsupported"):
