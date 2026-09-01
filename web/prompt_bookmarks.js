@@ -563,6 +563,13 @@ async function manualAddPrompt() {
     notify("info", t("configure"), t("saveBeforeBookmark"));
     return configureBindings();
   }
+  const resolvedBindings = state.bindings
+    .map((binding) => ({ binding, target: resolveLiveField(binding) }))
+    .filter((item) => item.target);
+  if (!resolvedBindings.length) {
+    notify("warn", t("configure"), t("missingConfiguredFields"));
+    return configureBindings();
+  }
   const dlg = openDialog(t("manualAddPrompt"));
   const name = document.createElement("input"); name.className = "pb-input"; name.placeholder = t("bookmarkNamePlaceholder"); name.autofocus = true;
   const group = document.createElement("input"); group.className = "pb-input"; group.placeholder = t("groupPlaceholder");
@@ -572,16 +579,15 @@ async function manualAddPrompt() {
   const fieldsLabel = document.createElement("div"); fieldsLabel.className = "pb-label"; fieldsLabel.textContent = t("fieldsToSave"); fieldsSection.appendChild(fieldsLabel);
 
   const fieldInputs = [];
-  for (const b of state.bindings) {
-    const target = resolveLiveField(b);
+  for (const { binding, target } of resolvedBindings) {
     const wrap = document.createElement("div"); wrap.className = "pb-section";
-    const label = document.createElement("div"); label.className = "pb-label"; label.textContent = b.label || b.widget_name;
-    const textarea = document.createElement("textarea"); textarea.className = "pb-input"; textarea.style.font = "inherit"; textarea.style.resize = "vertical"; textarea.style.minHeight = "75px";
-    textarea.placeholder = `${b.label || b.widget_name}...`;
-    textarea.value = target?.widget?.value ? String(target.widget.value) : "";
+    const label = document.createElement("div"); label.className = "pb-label"; label.textContent = binding.label || binding.widget_name;
+    const textarea = document.createElement("textarea"); textarea.className = "pb-textarea";
+    textarea.placeholder = `${binding.label || binding.widget_name}...`;
+    textarea.value = target.widget?.value ? String(target.widget.value) : "";
     wrap.append(label, textarea);
     fieldsSection.appendChild(wrap);
-    fieldInputs.push({ binding: b, target, textarea });
+    fieldInputs.push({ binding, target, textarea });
   }
   dlg.body.appendChild(fieldsSection);
 
@@ -594,7 +600,7 @@ async function manualAddPrompt() {
       groupId = found.id;
     }
     const fields = fieldInputs.map(({ binding, target, textarea }) => {
-      const f = currentField(binding, target || { node: findNode(binding.node_id) || { id: binding.node_id, type: binding.node_type }, widget: { value: "" } });
+      const f = currentField(binding, target);
       f.value = textarea.value;
       return f;
     });
