@@ -2,6 +2,12 @@
 
 All notable changes to ComfyUI Prompt Bookmarks are documented here.
 
+## 0.3.1 — 2026-09-22
+
+### Added
+
+- **Asset Card Bookmark Button & Standalone PNG Prompt Extraction**: Native one-click bookmark button on generated image cards in the Assets / History pane and node right-click menus, featuring client-side PNG chunk extraction for automatic prompt parsing and bookmark creation.
+
 ## 0.3.0 — 2026-08-25
 
 ### Added

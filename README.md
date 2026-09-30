@@ -63,6 +63,7 @@ If you are searching for a **ComfyUI prompt manager**, **prompt library**, **pro
 - Centered resizable dialogs with responsive, auto-stretching prompt textareas
 - Zero-dependency local AES-256-GCM password encryption with instant sidebar lock/unlock
 - Direct SQLite database (`.db`) export and restore in settings alongside JSON backup
+- One-click asset card bookmark button & PNG metadata extraction: hover over images in Assets / History or right-click to bookmark with auto-extracted prompts
 - Third-party `prompt-bookmarks-create` integration event for asset browsers and menus
 - Optional "Show all widgets" support for LoRA, steps, and aspect ratio parameter presets
 - Delete empty groups safely
